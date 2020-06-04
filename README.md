@@ -10,5 +10,5 @@ The program has other options, such as color distance, optimization initial valu
 
 The program is different from the Imatest software in terms of linearization and optimization initialization. The results of the program are compared with the results of Imatest, and most of them are consistent, especially the calculation results of the ccm matrix. But some results are quite different.
 
-You can test with the 'test.py' file.
+You can test with the 'test.py' file. The input colorchecker colors is got from Imatest software. The 'input1.png' test file is from http://cvil.eecs.yorku.ca/projects/public_html/sRGB_WB_correction/dataset.html, and 'input2.png' test file is from https://www2.cs.sfu.ca/~colour/data/shi_gehler/. 
 
