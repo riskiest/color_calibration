@@ -29,11 +29,7 @@ def rgbl2rgb(rgbl):
         else:
             return -(1.055*((-x)**(1/2.4))-0.055)
     return np.vectorize(_rgbl2rgb_ele)(rgbl)
-    # 线性RGB加上gammac rgbl->rgb
-    # because (x, y, z).T = xyz-from-rgb @ (rl, gl, bl).T
-    # so (x, y, z) = (rl, gl, bl) @ (xyz-from-rgb).T
-    # so rgb = xyz2rgb(xyz) = xyz2rgb((rl, gl, bl) @ (xyz-from-rgb).T)
-    # return (color.colorconv.xyz2rgb((rgbl/255)@(color.colorconv.xyz_from_rgb.T)))*255
+
 
 def gamma_correction(rgb, gamma):
     # 使用gamma进行线性化
@@ -44,13 +40,9 @@ def gamma_correction(rgb, gamma):
     return arr
 
 def rgbl2xyz(rgbl):
-    # 把(rl, gl, bl) 变成 xyz rgbl->xyz
-    # (x, y, z) = (rl, gl, bl) @ (xyz-from-rgb).T
     return rgbl@(color.colorconv.xyz_from_rgb.T)
 
 def xyz2rgbl(xyz):
-    # 把xyz变成(rl, gl, bl) xyz->rgbl
-    # (rl, gl, bl) = (x, y, z) @ (rgb-from-xyz).T
     return xyz@(color.colorconv.rgb_from_xyz.T)
 
 def rgbl2lab(rgbl):

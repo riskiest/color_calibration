@@ -7,7 +7,7 @@ from cv2 import cv2
 class CCM_3x3:
     def __init__(self, src, colorchecker, saturated_threshold, 
         pre_linear, pre_gamma, pre_deg, post_linear, post_gamma, post_deg, 
-        distance, initial, method, tol):
+        distance, initial, xtol, ftol):
         '''src: rgb, dst: lab'''
         colorchecker = globals()['ColorChecker_' + colorchecker]()
         self.prelinear = globals()['Linear_'+pre_linear](pre_gamma, pre_deg, src, colorchecker, saturated_threshold)
@@ -25,8 +25,8 @@ class CCM_3x3:
 
         self.distance = globals()['distance_' + distance]
         self.inital_func = getattr(self, 'initial_' + initial)
-        self.method = method
-        self.tol = tol
+        self.xtol = xtol
+        self.ftol = ftol
         self.ccm = None
         
         if distance == 'rgb':
@@ -56,7 +56,7 @@ class CCM_3x3:
             return
         ccm0 = self.inital_func(self.src_rgbl_mask, self.dst_rgbl_mask) 
         ccm0 = ccm0.reshape((-1))
-        res = fmin(self.loss_rgb, ccm0, ftol = self.tol)
+        res = fmin(self.loss_rgb, ccm0, xtol = self.xtol, ftol = self.ftol)
         if res is not None:
             self.ccm = res.reshape((-1,3))
             print('ccm', self.ccm)
@@ -78,7 +78,7 @@ class CCM_3x3:
         ccm0 = self.inital_func(self.src_rgbl_mask, self.dst_rgbl_mask)
         ccm0 = ccm0.reshape((-1))
         # print('ccm0:', ccm0)
-        res = fmin(self.loss, ccm0, ftol = self.tol)
+        res = fmin(self.loss, ccm0, xtol = self.xtol, ftol = self.ftol)
         if res is not None:
             self.ccm = res.reshape((-1,3))
             print('ccm:', self.ccm)

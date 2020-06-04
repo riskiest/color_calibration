@@ -3,7 +3,7 @@ from cv2 import cv2
 import numpy as np
 import os
 
-fileDict = {'input1.png': np.array([[214.11,  98.67,  37.97],
+fileDict = {'imgs/input1.png': np.array([[214.11,  98.67,  37.97],
        [231.94, 153.1 ,  85.27],
        [204.08, 143.71,  78.46],
        [190.58, 122.99,  30.84],
@@ -27,7 +27,7 @@ fileDict = {'input1.png': np.array([[214.11,  98.67,  37.97],
        [212.19, 133.49,  54.79],
        [181.17, 102.94,  36.18],
        [115.1 ,  53.77,  15.23]]),
-       'input2.png': np.array([[ 50.9 ,  49.07,  20.62],
+       'imgs/input2.png': np.array([[ 50.9 ,  49.07,  20.62],
        [144.35, 142.37,  68.76],
        [ 58.45,  98.21,  76.68],
        [ 47.21,  64.9 ,  19.75],
@@ -62,17 +62,17 @@ def test(filename, savetag, **kwargs):
     cv2.imwrite(head + '_' + str(savetag) + end, img)    
 
 def test_1():
-    test('input1.png', 1)
-    test('input1.png', 2, initial_value='least_square',pre_linear='gray_polyfit', pre_deg=3)
-    test('input1.png', 3, distance = 'rgb', post_linear='identity')
-    test('input1.png', 4, pre_linear='identity', distance = 'rgb', post_linear='identity')
-    test('input1.png', 5, distance = 'rgb')
-    test('input1.png', 6, pre_linear='gamma', pre_gamma=2.2, post_linear='gamma', post_gamma=2.2)
-    test('input1.png', 7, distance = 'de94', pre_linear='color_polyfit')
+    test('imgs/input1.png', 1)
+    test('imgs/input1.png', 2, initial_value='least_square',pre_linear='gray_polyfit', pre_deg=3)
+    test('imgs/input1.png', 3, distance = 'rgb', post_linear='identity')
+    test('imgs/input1.png', 4, pre_linear='identity', distance = 'rgb', post_linear='identity')
+    test('imgs/input1.png', 5, distance = 'rgb')
+    test('imgs/input1.png', 6, pre_linear='gamma', pre_gamma=2.2, post_linear='gamma', post_gamma=2.2)
+    test('imgs/input1.png', 7, distance = 'de94', pre_linear='color_polyfit')
 
 def test_2():
-    test('input2.png', 1, distance = 'rgb', pre_linear='identity')
-    test('input2.png', 2, distance = 'de00', pre_linear='identity', post_linear='gamma', post_gamma=2.2)
+    test('imgs/input2.png', 1, distance = 'rgb', pre_linear='identity')
+    test('imgs/input2.png', 2, distance = 'de00', pre_linear='identity', post_linear='gamma', post_gamma=2.2)
 
 if __name__ == "__main__":
     test_1()
