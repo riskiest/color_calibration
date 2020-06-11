@@ -1,6 +1,18 @@
 import numpy as np
 from .color_spaces import *
 
+class ColorChecker:
+    def __init__(self, rgb):
+        # lab = ColorChecker2005_LAB_D65_2
+        xyz = lab2xyz(lab)
+        rgbl = xyz2rgbl(xyz)
+        rgb = rgbl2rgb(rgbl)
+        rgbl = rgb2rgbl(rgb)
+        
+        gray = rgb2gray(rgb)
+        grayl = rgb2rgbl(gray)        
+        pass
+
 class ColorChecker_Macbeth:
     ColorChecker2005_LAB_D50_2 = np.array([[37.986, 13.555, 14.059],
             [65.711, 18.13, 17.81],

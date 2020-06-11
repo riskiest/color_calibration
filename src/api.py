@@ -1,13 +1,16 @@
 from .ccm import CCM_3x3
 
-def color_calibration(src, colorchecker = 'Macbeth', ccm_shape = '3x3', saturated_threshold = (0.02, 0.98), 
+def color_calibration(src, dst = None, colorchecker = 'Macbeth', 
+        ccm_shape = '3x3', saturated_threshold = (0.02, 0.98), 
         pre_linear = 'srgb', pre_gamma = None, pre_deg = None, 
-        post_linear = 'srgb', post_gamma = None, post_deg = None,  
+        post_linear = 'srgb', post_gamma = None, post_deg = None, 
+        weights_list = None, weights_coeff = 0, weight_color = False,
         distance = 'de00', initial_value = 'white_balance', xtol = 1e-4, ftol = 1e-4):
     '''
     src: input colorchecker patches colors; values are inside [0, 1];
         now 24x3 numpy matrix is the only supported;
-    dst: the kind of colorchecker patches; str; 
+    dst: the true value 
+    colorchecker: the kind of colorchecker patches; str; 
         now only 'Macbeth' is supported.
     ccm_shape: shape of color correction matrix (ccm); str; 
         '3x3' now is the only supported;
@@ -18,8 +21,10 @@ def color_calibration(src, colorchecker = 'Macbeth', ccm_shape = '3x3', saturate
             'srgb': (de)linearize src with srgb way; 
             'color_polyfit': use three polyfit functions to fit from src-rgb to dst-rgbl; 
                         and you should assign value to pre_deg;
+            'color_log_polyfit': log_polyfit version of color_polyfit;
             'gray_polyfit': use one polyfit function to fit from scr gray patches to dst gray patches;
                         and you should assign value to pre_deg;
+            'gray_log_polyfit': log_polyfit version of gray_polyfit;
             'identity': do nothing; perfect for RAW file.
     pre-gamma: pre_linear gamma value; float; 2.2 is recommended.
     pre-deg: pre_linear polyfit degree; int; 3 is recommended.
@@ -29,7 +34,9 @@ def color_calibration(src, colorchecker = 'Macbeth', ccm_shape = '3x3', saturate
             'srgb': (de)linearize src with srgb way; 
             'identity': do nothing; perfect for RAW file.
     post-gamma: post_linear gamma value; float; 2.2 is recommended.
-    post-deg: pre_linear polyfit degree; int; now it is useless in fact.    
+    post-deg: pre_linear polyfit degree; int; now it is useless in fact.
+    weights_list:
+        One can define weight  
     distance: the way to calculate color difference; str;
         now support:
             'de00': ciede2000 
@@ -43,6 +50,7 @@ def color_calibration(src, colorchecker = 'Macbeth', ccm_shape = '3x3', saturate
     xtol: ccm element tolent for nonlinear optimization;
     tolent: function-value tolent for nonlinear optimization;
     '''
-    return CCM_3x3(src, colorchecker, saturated_threshold, 
+    return CCM_3x3(src, dst, colorchecker, saturated_threshold, 
         pre_linear, pre_gamma, pre_deg, post_linear, post_gamma, post_deg, 
+        weights_list, weights_coeff, weight_color,
         distance, initial_value, xtol, ftol)
