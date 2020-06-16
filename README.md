@@ -12,3 +12,12 @@ The program is different from the Imatest software in terms of linearization and
 
 You can test with the 'test.py' file. The input colorchecker colors is got from Imatest software. The 'input1.png' test file is from http://cvil.eecs.yorku.ca/projects/public_html/sRGB_WB_correction/dataset.html, and 'input2.png' test file is from https://www2.cs.sfu.ca/~colour/data/shi_gehler/. 
 
+There will be more functions in branch v2.
+
+- [ ] weights
+- [ ] color space
+- [ ] new linearize class
+- [ ] accept customerized colorchecker
+- [ ] new ccm matrix
+- [ ] new distance function
+- [ ] rgb or bgr

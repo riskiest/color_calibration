@@ -1,14 +1,18 @@
-from .ccm import CCM_3x3
+from .ccm import *
 
-def color_calibration(src, dst = None, colorchecker = 'Macbeth', 
-        ccm_shape = '3x3', saturated_threshold = (0.02, 0.98), 
-        pre_linear = 'srgb', pre_gamma = None, pre_deg = None, 
-        post_linear = 'srgb', post_gamma = None, post_deg = None, 
+def color_calibration(src, 
+        dst = None, dst_colorspace = 'sRGB', 
+            dst_illuminant  = None, dst_observer = None, dst_whites = None, 
+        colorchecker = 'Macbeth', 
+        ccm_shape = '3x3', saturated_threshold = (0.02, 0.98), colorspace = 'sRGB',
+        linear = 'gamma', gamma = None, deg = None, 
+        distance = 'de00', dist_illuminant = 'D65', dist_observer = '2',
         weights_list = None, weights_coeff = 0, weight_color = False,
-        distance = 'de00', initial_value = 'white_balance', xtol = 1e-4, ftol = 1e-4):
+        initial_value = 'least_square', xtol = 1e-4, ftol = 1e-4):
+        
     '''
     src: input colorchecker patches colors; values are inside [0, 1];
-        now 24x3 numpy matrix is the only supported;
+        now numpy matrix is the only supported;
     dst: the true value 
     colorchecker: the kind of colorchecker patches; str; 
         now only 'Macbeth' is supported.
@@ -35,8 +39,9 @@ def color_calibration(src, dst = None, colorchecker = 'Macbeth',
             'identity': do nothing; perfect for RAW file.
     post-gamma: post_linear gamma value; float; 2.2 is recommended.
     post-deg: pre_linear polyfit degree; int; now it is useless in fact.
-    weights_list:
-        One can define weight  
+    weights_list: One can define weights color by color; numpy;
+    weights_coeff: 
+
     distance: the way to calculate color difference; str;
         now support:
             'de00': ciede2000 
@@ -50,7 +55,13 @@ def color_calibration(src, dst = None, colorchecker = 'Macbeth',
     xtol: ccm element tolent for nonlinear optimization;
     tolent: function-value tolent for nonlinear optimization;
     '''
-    return CCM_3x3(src, dst, colorchecker, saturated_threshold, 
-        pre_linear, pre_gamma, pre_deg, post_linear, post_gamma, post_deg, 
+    return globals()['CCM_'+ccm_shape](src, dst, dst_colorspace, 
+        dst_illuminant, dst_observer, dst_whites , colorchecker, 
+        saturated_threshold, colorspace, linear, gamma, deg, 
+        distance, dist_illuminant, dist_observer,
         weights_list, weights_coeff, weight_color,
-        distance, initial_value, xtol, ftol)
+        initial_value, xtol, ftol)
+    # return CCM_3x3(src, dst, colorchecker, saturated_threshold, 
+    #     pre_linear, pre_gamma, pre_deg, post_linear, post_gamma, post_deg, 
+    #     weights_list, weights_coeff, weight_color,
+    #     distance, initial_value, xtol, ftol)

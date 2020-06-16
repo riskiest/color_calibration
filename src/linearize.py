@@ -1,5 +1,6 @@
-from .color_spaces import *
 import numpy as np
+from .utils import *
+from .colorspace import gamma_correction
 
 class Linear:
     def __init__(self, *args):
@@ -9,9 +10,6 @@ class Linear:
         pass
 
     def linearize(self, inp):
-        return inp
-
-    def delinearize(self, inp):
         return inp
 
 class Linear_identity(Linear):
@@ -25,15 +23,15 @@ class Linear_gamma(Linear):
     def linearize(self, inp):
         return gamma_correction(inp, self.gamma)
 
-    def delinearize(self, inp):
-        return gamma_correction(inp, 1/self.gamma)
+    # def delinearize(self, inp):
+    #     return gamma_correction(inp, 1/self.gamma)
 
-class Linear_srgb(Linear):
-    def linearize(self, inp):
-        return rgb2rgbl(inp)
+# class Linear_srgb(Linear):
+#     def linearize(self, inp):
+#         return rgb2rgbl(inp)
 
-    def delinearize(self, inp):
-        return rgbl2rgb(inp)
+#     def delinearize(self, inp):
+#         return rgbl2rgb(inp)
 
 class Linear_color_polyfit(Linear):
     def __init__(self, _, deg, src, colorchecker, saturated_threshold):
@@ -53,10 +51,8 @@ class Linear_color_polyfit(Linear):
 
     def linearize(self, inp):
         r, g, b = inp[..., 0], inp[..., 1], inp[..., 2]
-        return np.stack([r, g, b], axis=-1)
+        return np.stack([self.pr(r), self.pg(g), self.pb(b)], axis=-1)
 
-    def delinearize(self, inp):
-        raise Exception("polyfit can't delinearize!")
 
 class Linear_gray_polyfit(Linear):
     def __init__(self, _, deg, src, colorchecker, saturated_threshold):
@@ -73,5 +69,5 @@ class Linear_gray_polyfit(Linear):
     def linearize(self, inp):
         return self.p(inp)
 
-    def delinearize(self, inp):
-        raise Exception("polyfit can't delinearize!")
+    # def delinearize(self, inp):
+    #     raise Exception("polyfit can't delinearize!")
