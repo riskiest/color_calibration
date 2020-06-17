@@ -1,5 +1,5 @@
 from .ccm import *
-def color_calibration(src, 
+def color_calibration(src,
         dst = None, dst_colorspace = 'sRGB', 
             dst_illuminant  = None, dst_observer = None, dst_whites = None, 
         colorchecker = 'Macbeth_D65_2 ', 
@@ -10,6 +10,9 @@ def color_calibration(src,
         initial_method = 'least_square', xtol = 1e-4, ftol = 1e-4):
         
     '''
+    notice:
+    only support rgb.
+
     src: input colorchecker patches colors; values are inside [0, 1];
         now numpy matrix is the only supported;
     dst: the true value 

@@ -12,3 +12,5 @@ def distance_de76(src_lab, dst_lab):
 
 distance_rgbl = distance_rgb = distance_de76
 
+def distance_cmc(src_lab, dst_lab):
+    return color.deltaE_cmc(src_lab, dst_lab)

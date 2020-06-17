@@ -14,10 +14,17 @@ You can test with the 'test.py' file. The input colorchecker colors is got from 
 
 There will be more functions in branch v2.
 
-- [ ] weights
-- [ ] color space
-- [ ] new linearize class
-- [ ] accept customerized colorchecker
-- [ ] new ccm matrix
-- [ ] new distance function
-- [ ] rgb or bgr
+- [x] weights
+- [x] color space
+- [x] new linearize class
+- [x] accept customerized colorchecker
+- [x] new ccm matrix
+- [x] new distance function
+- [x] rgb or bgr (determined: only rgb)
+
+Future functions (won't do unless it has merged by OpenCV):
+
+- [ ] value linearization functions
+- [ ] value optimization
+- [ ] auto gamma
+- [ ] auto optimization
