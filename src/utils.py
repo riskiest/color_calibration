@@ -1,12 +1,12 @@
 import numpy as np
 
 def saturate(src, low, up):
-    return np.all(np.logical_and(src>=low,src<=up), axis = 1)
+    return np.all(np.logical_and(src>=low,src<=up), axis = 1)               
 
 def rgb2gray(rgb):
     '''
     In fact, every kind of rgb has a different function to gray.
-    Cos we donot know the exact color space of the input, we use it as an approximation.
+    because we don't know the exact color space of the input, we use it as an approximation.
     '''
     return rgb@np.array([0.2126, 0.7152, 0.0722])
 

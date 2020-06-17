@@ -1,6 +1,6 @@
 from .linearize import *
 from scipy.optimize import minimize, fmin
-from .color_spaces import *
+from .colorspace import *
 from .colorchecker import *
 from cv2 import cv2
 
