@@ -58,6 +58,7 @@ class Linear_gray_polyfit(Linear):
     def __init__(self, _, deg, src, colorchecker, saturated_threshold):
         self.deg = deg
         mask = saturate(src[18:,:], *saturated_threshold)
+        # white_mask = 
         self.src, self.dst = rgb2gray(src[18:,:][mask]), colorchecker.grayl[18:][mask]
         self.calc()
 
