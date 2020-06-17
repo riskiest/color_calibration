@@ -70,7 +70,9 @@ class CCM_3x3:
         self.ftol = ftol
         # the output
         self.ccm = None
-        
+
+        self.prepare()
+
         # distance function may affect the loss function and the calculate function
         # 'rgbl distance'
         if distance == 'rgb':
@@ -79,6 +81,9 @@ class CCM_3x3:
             self.calculate_rgbl()
         else:
             self.calculate()
+    
+    def prepare(self):
+        pass
         
     def initial_white_balance(self, src_rgbl, dst_rgbl):
         '''calculate nonlinear-optimization initial value by white balance:
@@ -179,8 +184,7 @@ class CCM_3x3:
         return cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
 class CCM_4x3(CCM_3x3):
-    def __init__(self, *args):
-        super().__init__(*args)
+    def prepare(self):
         self.src_rgbl_masked = self.add_column(self.src_rgbl_masked)
     
     @staticmethod
