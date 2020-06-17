@@ -2,7 +2,7 @@ from .ccm import *
 def color_calibration(src, 
         dst = None, dst_colorspace = 'sRGB', 
             dst_illuminant  = None, dst_observer = None, dst_whites = None, 
-        colorchecker = 'Macbeth', 
+        colorchecker = 'Macbeth_D65_2 ', 
         ccm_shape = '3x3', saturated_threshold = (0.02, 0.98), colorspace = 'sRGB',
         linear = 'gamma', gamma = None, deg = None, 
         distance = 'de00', dist_illuminant = 'D65', dist_observer = '2',

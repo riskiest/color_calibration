@@ -105,3 +105,4 @@ ColorChecker2005_LAB_D65_2 = np.array([[37.542, 12.018, 13.33],
 		[20.475, 0.049, -0.972]])
 
 colorchecker_Macbeth = ColorChecker(ColorChecker2005_LAB_D50_2, 'LAB', D50_2, np.arange(18,24))
+colorchecker_Macbeth_D65_2 = ColorChecker(ColorChecker2005_LAB_D65_2, 'LAB', D65_2, np.arange(18,24))

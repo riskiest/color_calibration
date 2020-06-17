@@ -1,7 +1,6 @@
 import numpy as np
 from math import log, exp
 from .utils import *
-from .colorspace import gamma_correction
 
 class Linear:
     def __init__(self, *args):

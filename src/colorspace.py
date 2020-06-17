@@ -2,41 +2,12 @@ import numpy as np
 from skimage import color
 from .utils import *
 
-# some convection functions
-def xyz2grayl(xyz):
-    return xyz[..., 1]
-
-def xyz2lab(xyz, io = D65_2):
-    return color.colorconv.xyz2lab(xyz, io.illuminant, io.observer)
-
-def lab2xyz(lab, io = D65_2):
-    return color.colorconv.lab2xyz(lab, io.illuminant, io.observer)
-
-def xyz2xyz(xyz, sio, dio):
-    if sio==dio:
-        return xyz
-    return cam(sio, dio)@xyz
-
-def lab2lab(lab, sio, dio):
-    if sio==dio:
-        return lab    
-    return xyz2lab(xyz2xyz(lab2xyz(lab, sio), sio, dio), dio) 
-
-# gamma correction ...
-def gamma_correction(rgb, gamma):
-    arr = rgb.copy()
-    mask = rgb>=0
-    arr[mask] = np.power(arr[mask], gamma)
-    arr[~mask] = -np.power(-arr[~mask], gamma)
-    return arr
-
 class RGB_Base:
     def __init__(self):
         self.xr, self.yr = 0.6400, 0.3300	
         self.xg, self.yg = 0.21, 0.71
         self.xb, self.yb = 0.1500, 0.0600
         self.io_base = D65_2
-        # self.obs_base = '2'
         self.gamma = 2.2  
         self._M_RGBL2XYZ_base = None
         self._M_RGBL2XYZ = {}
@@ -58,18 +29,14 @@ class RGB_Base:
             return self._M_RGBL2XYZ_base
         return self.cal_M_RGBL2XYZ_base()
 
-    def get_default(self, io = None):
+    def choose_io(self, io = None):
         return io or self._default_io
     
     def set_default(self, io):
         self._default_io = io
-    
-    # def get_default(self):
-    #     return self._default_io
-        # self._default_obs = obs
-        
+            
     def M_RGBL2XYZ(self, io = None, rev = False):
-        io = self.get_default(io)
+        io = self.choose_io(io)
         if io in self._M_RGBL2XYZ:
             return self._M_RGBL2XYZ[io][1 if rev else 0]
         if io==self.io_base:
@@ -80,11 +47,11 @@ class RGB_Base:
         return self._M_RGBL2XYZ[io][1 if rev else 0]
 
     def rgbl2xyz(self, rgbl, io = None):
-        io = self.get_default(io)
+        io = self.choose_io(io)
         return rgbl@(self.M_RGBL2XYZ(io).T)
     
     def xyz2rgbl(self, xyz, io = None):
-        io = self.get_default(io)
+        io = self.choose_io(io)
         return xyz@(self.M_RGBL2XYZ(io, True).T)
 
     def rgb2rgbl(self, rgb):
@@ -94,19 +61,19 @@ class RGB_Base:
         return gamma_correction(rgbl, 1/self.gamma)
 
     def rgb2xyz(self, rgb, io = None):
-        io = self.get_default(io)
+        io = self.choose_io(io)
         return self.rgbl2xyz(self.rgb2rgbl(rgb), io) 
 
     def xyz2rgb(self, xyz, io = None):
-        io = self.get_default(io)
+        io = self.choose_io(io)
         return self.rgbl2rgb(self.xyz2rgbl(xyz, io)) 
 
     def rgbl2lab(self, rgbl, io = None):
-        io = self.get_default(io)
+        io = self.choose_io(io)
         return xyz2lab(self.rgbl2xyz(rgbl, io), io)
     
     def rgb2lab(self, rgb, io = None):
-        io = self.get_default(io)
+        io = self.choose_io(io)
         return self.rgbl2lab(self.rgb2rgbl(rgb), io)
         
 class sRGB_Base(RGB_Base):
@@ -172,7 +139,7 @@ class WideGamutRGB(RGB_Base):
         self.xr, self.yr = 0.7347, 0.2653	
         self.xg, self.yg = 0.1152, 0.8264
         self.xb, self.yb = 0.1566, 0.0177
-        self.ill_base = 'D50'
+        self.io_base = D50_2
 
 class ProPhotoRGB(RGB_Base):
     def __init__(self):
@@ -181,7 +148,7 @@ class ProPhotoRGB(RGB_Base):
         self.xr, self.yr = 0.734699, 0.265301	
         self.xg, self.yg = 0.159597, 0.840403
         self.xb, self.yb = 0.036598, 0.000105
-        self.ill_base = 'D50'    
+        self.io_base = D50_2    
 
 class DCI_P3_RGB(RGB_Base):
     def __init__(self):
