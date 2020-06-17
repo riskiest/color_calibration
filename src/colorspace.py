@@ -12,10 +12,10 @@ def xyz2grayl(xyz):
     return xyz[..., 1]
 
 def xyz2lab(xyz, io = D65_2):
-    return color.colorconv.xyz2lab(xyz, io)
+    return color.colorconv.xyz2lab(xyz, io.illuminant, io.observer)
 
 def lab2xyz(lab, io = D65_2):
-    return color.colorconv.lab2xyz(lab, io)
+    return color.colorconv.lab2xyz(lab, io.illuminant, io.observer)
 
 def xyz2xyz(xyz, sio, dio):
     if sio==dio:

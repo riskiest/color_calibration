@@ -61,7 +61,3 @@ def color_calibration(src,
         distance, dist_illuminant, dist_observer,
         weights_list, weights_coeff, weight_color,
         initial_value, xtol, ftol)
-    # return CCM_3x3(src, dst, colorchecker, saturated_threshold, 
-    #     pre_linear, pre_gamma, pre_deg, post_linear, post_gamma, post_deg, 
-    #     weights_list, weights_coeff, weight_color,
-    #     distance, initial_value, xtol, ftol)
