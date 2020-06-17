@@ -1,5 +1,4 @@
 from .ccm import *
-
 def color_calibration(src, 
         dst = None, dst_colorspace = 'sRGB', 
             dst_illuminant  = None, dst_observer = None, dst_whites = None, 
@@ -8,7 +7,7 @@ def color_calibration(src,
         linear = 'gamma', gamma = None, deg = None, 
         distance = 'de00', dist_illuminant = 'D65', dist_observer = '2',
         weights_list = None, weights_coeff = 0, weight_color = False,
-        initial_value = 'least_square', xtol = 1e-4, ftol = 1e-4):
+        initial_method = 'least_square', xtol = 1e-4, ftol = 1e-4):
         
     '''
     src: input colorchecker patches colors; values are inside [0, 1];
@@ -54,10 +53,20 @@ def color_calibration(src,
             'least_square': general-inverse(src-rgbl)*dst-rgbl
     xtol: ccm element tolent for nonlinear optimization;
     tolent: function-value tolent for nonlinear optimization;
+
+    变量对照表：
+    src, s: source;
+    dst, d: destination;
+    io: illuminant & observer; instance of class IO;
+        sio, dio: source of io; destination of io;
+    rgbl: linearization of rgb
+    cs: colorspace;
+    cc: colorchecker;
+    M: matrix
+    ccm: color correction matrix;
+    cam: chromatic adaption matrix;
     '''
-    return globals()['CCM_'+ccm_shape](src, dst, dst_colorspace, 
-        dst_illuminant, dst_observer, dst_whites , colorchecker, 
-        saturated_threshold, colorspace, linear, gamma, deg, 
-        distance, dist_illuminant, dist_observer,
-        weights_list, weights_coeff, weight_color,
-        initial_value, xtol, ftol)
+    return globals()['CCM_'+ccm_shape](src, dst, dst_colorspace, dst_illuminant, dst_observer, 
+        dst_whites, colorchecker, saturated_threshold, colorspace, linear, gamma, deg, 
+        distance, dist_illuminant, dist_observer, weights_list, weights_coeff, weight_color,
+        initial_method, xtol, ftol)

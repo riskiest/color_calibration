@@ -1,110 +1,58 @@
 import numpy as np
 from .colorspace import *
+from .utils import *
 
 class ColorChecker:
-	def __init__(self, color, colorspace, ill, obs, whites=None):
+	def __init__(self, color, colorspace, io, whites=None):
 		'''
 		color: colors of colorchecker patches;
 		colorspace: 'LAB' or a kind of 'RGB' color space;
-		ill: if colorspace is 'LAB', then ill is the illuminant of color defined on;
-		obs: if colorspace is 'LAB', then obs is the observer of color defined on;
-		whites: sometimes needed for linearization
+		io: needed if colorspace is 'LAB';
+		whites: sometimes needed for linearization;
 		'''
-		# self.color = color
-		self._lab, self._rgb = None, None
-		self.cs = globals()[colorspace]
+		# colorspace and color
+		self.lab, self.rgb = None, None
+		self.cs = get_colorspace(colorspace)
 		if colorspace == 'LAB':
-			self._lab = color
+			self.lab = color
 		else:
-			self._rgb = color
-			
-		# self.colorspace = colorspace
-		self.ill = ill
-		self.obs = obs
-		# self.dist_ill = dist_ill
-		# self.dist_obs = dist_obs
+			self.rgb = color
+		self.io = io
+
+		# white_mask & color_mask
 		if whites is None:
-			whites = np.zeros(0, dtype=np.int)
-		self.whites = whites
-		self.white_mask = np.ones(color.shape, dtype=bool)
-		self.white_mask[whites] = False
+			self.white_mask = np.zeros(color.shape, dtype=bool)
+		else:
+			self.white_mask = np.ones(color.shape, dtype=bool)
+			self.white_mask[whites] = False
 		self.color_mask = ~self.white_mask
 
-
 class ColorCheckerMetric:
-	def __init__(self, colorchecker, colorspace, dist_ill, dist_obs):
+	def __init__(self, colorchecker, colorspace, io):
 		'''
-		dist_ill: distance illuminant; needed when calculating xyz, lab
-		dist_obs: distance observer; needed when calculating xyz, lab
+		dio: needed when calculating xyz, lab
 		'''
 
 		self.cc = colorchecker
-		# self._lab, self._xyz, self._rgb, self._rgbl = \
-		# 	self.cc._lab, self.cc._xyz, self.cc._rgb, self.cc._rgbl
-		
-		# self._grayl, self._l = None, None
 		self.cs = globals()[colorspace]
-		self.dist_ill = dist_ill
-		self.dist_obs = dist_obs
+		self.io = io
 
 		if self.cc.lab:
-			self.lab = lab2lab(self.cc.lab, self.cc.ill, self.cc.obs, dist_ill, dist_obs)
-			self.xyz = lab2xyz(self.lab, dist_ill, dist_obs)
-			self.rgbl = self.cs.xyz2rgbl(self.xyz, dist_ill, dist_obs)
+			self.lab = lab2lab(self.cc.lab, self.cc.io, io)
+			self.xyz = lab2xyz(self.lab, io)
+			self.rgbl = self.cs.xyz2rgbl(self.xyz, io)
 			self.rgb = self.cs.rgbl2rgb(self.rgbl)
 		else:
 			self.rgb = colorconvert(self.cc.rgb, self.cs, self.cs)
 			self.rgbl = self.cs.rgb2rgbl(self.rgb)
 			self.xyz = self.cs.rgbl2xyz(self.rgbl)
 			self.lab = xyz2lab(self.xyz)
+		self.grayl = xyz2grayl(self.xyz)
 
-	# @property
-	# def lab(self):
-	# 	if not self._lab:
-	# 		self._lab = xyz2lab(self.xyz)
-	# 	return self._lab
-
-	# @property
-	# def rgb(self):
-	# 	if not self._rgb:
-	# 		self._rgb = self.cs.rgbl2rgb(self.rgbl)
-	# 	return self._rgb
-
-	# @property
-	# def rgbl(self):
-	# 	if not self._rgbl:
-	# 		if self._rgb:
-	# 			self._rgbl = self.cs.rgb2rgbl(self._rgb)
-	# 		else:
-	# 			self._rgbl = self.cs.xyz2rgbl(self.xyz, self.dist_ill, self.dist_obs)
-	# 	return self._rgbl
-
-	# @property
-	# def xyz(self):
-	# 	if not self._xyz:
-	# 		if self._lab:
-	# 			self._xyz = lab2xyz(self.lab, self.dist_ill, self.dist_obs)
-	# 		else:
-	# 			self._xyz = self.cs.rgbl2xyz(self.rgbl, self.dist_ill, self.dist_obs)
-	# 	return self._xyz
-
-	# @property
-	# def grayl(self):
-	# 	if not self._grayl:
-	# 		self._grayl = xyz2grayl(self.xyz)
-	# 	return self._grayl
-	
-	# @property
-	# def l(self):
-	# 	if not self._l:
-	# 		self._l = 
-
-	
-	# @property
-	# def whites_grayl(self):
-	# 	if not self._grayl:
-	# 		self._grayl = xyz2grayl(self.xyz)
-	# 	return self._grayl  
+		# white_mask & color_mask
+		self.white_mask = self.cc.white_mask
+		self.color_mask = self.cc.color_mask
+		 
 
 ColorChecker2005_LAB_D50_2 = np.array([[37.986, 13.555, 14.059],
 		[65.711, 18.13, 17.81],
@@ -156,4 +104,4 @@ ColorChecker2005_LAB_D65_2 = np.array([[37.542, 12.018, 13.33],
 		[35.68, -0.22, -1.205],
 		[20.475, 0.049, -0.972]])
 
-colorchecker_Macbeth = ColorChecker(ColorChecker2005_LAB_D50_2, 'LAB', 'D50', '2', np.arange(18,24))
+colorchecker_Macbeth = ColorChecker(ColorChecker2005_LAB_D50_2, 'LAB', D50_2, np.arange(18,24))

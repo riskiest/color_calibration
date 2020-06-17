@@ -3,11 +3,6 @@ from skimage import color
 from .utils import *
 
 # some convection functions
-def xyY2XYZ(x,y,Y=1):
-    X = Y*x/y
-    Z = Y/y*(1-x-y)
-    return np.array([X,Y,Z])
-
 def xyz2grayl(xyz):
     return xyz[..., 1]
 
@@ -34,61 +29,6 @@ def gamma_correction(rgb, gamma):
     arr[mask] = np.power(arr[mask], gamma)
     arr[~mask] = -np.power(-arr[~mask], gamma)
     return arr
-
-# illuminant matrices....
-def get_illuminant():
-    # data from https://en.wikipedia.org/wiki/Standard_illuminant
-    illuminants_xy = \
-        {IO("A", "2"): (0.44757, 0.40745),
-         IO("A", "10"): (0.45117, 0.40594),
-         IO("D50", "2"): (0.34567, 0.35850),
-         IO("D50", "10"): (0.34773, 0.35952),
-         IO("D55", "2"): (0.33242, 0.34743),
-         IO("D55", "10"): (0.33411, 0.34877),
-         IO("D65", "2"): (0.31271, 0.32902),  
-         IO("D65", "10"): (0.31382, 0.33100),
-         IO("D75", "2"): (0.29902, 0.31485),
-         IO("D75", "10"): (0.29968, 0.31740),
-         IO("E", "2"): (1/3, 1/3),
-         IO("E", "10"): (1/3, 1/3)}
-
-    illuminants = {}
-    for io, (x, y) in illuminants_xy.items():
-        illuminants[io] = xyY2XYZ(x, y)
-
-    # data from https://en.wikipedia.org/wiki/Illuminant_D65
-    illuminants[IO("D65", "2")]=np.array([0.95047, 1., 1.08883])
-    illuminants[IO("D65", "10")]=np.array([0.94811, 1., 1.07304])
-    return illuminants
-
-illuminants = get_illuminant()
-
-# chromatic adaption matrices
-CAMs = {}
-
-Von_Kries = np.array([[ 0.40024,  0.7076 , -0.08081],
-                [-0.2263 ,  1.16532,  0.0457 ],
-                [ 0.     ,  0.     ,  0.91822]])
-
-Bradford = np.array([[0.8951, 0.2664, -0.1614],
-        [-0.7502, 1.7135, 0.0367],
-        [0.0389, -0.0685, 1.0296]])
-
-MAs = {'Identity':(np.eye(3), np.eye(3)), 
-    'Von_Kries':(Von_Kries, np.linalg.inv(Von_Kries)),
-    'Bradford':(Bradford, np.linalg.inv(Bradford))}
-
-def cam(sio, dio, method = 'Bradford'):
-    if (sio, dio) in CAMs:
-        return CAMs[(sio, dio)]
-    # function from http://www.brucelindbloom.com/index.html?ColorCheckerRGB.html
-    XYZws = illuminants[sio]
-    XYZWd = illuminants[dio]
-    MA, MA_inv = MAs[method]
-    M = MA_inv@np.diag((MA@XYZWd)/(MA@XYZws))
-    CAMs[(sio, dio)] = M
-    return M
-
 
 class RGB_Base:
     def __init__(self):
@@ -118,19 +58,18 @@ class RGB_Base:
             return self._M_RGBL2XYZ_base
         return self.cal_M_RGBL2XYZ_base()
 
-    def _default(self, io):
-        # if ill is None:
-        #     ill = self._default_ill
-        # if obs is None:
-        #     obs = self._default_obs
+    def get_default(self, io = None):
         return io or self._default_io
     
     def set_default(self, io):
         self._default_io = io
+    
+    # def get_default(self):
+    #     return self._default_io
         # self._default_obs = obs
         
     def M_RGBL2XYZ(self, io = None, rev = False):
-        io = self._default(io)
+        io = self.get_default(io)
         if io in self._M_RGBL2XYZ:
             return self._M_RGBL2XYZ[io][1 if rev else 0]
         if io==self.io_base:
@@ -141,11 +80,11 @@ class RGB_Base:
         return self._M_RGBL2XYZ[io][1 if rev else 0]
 
     def rgbl2xyz(self, rgbl, io = None):
-        io = self._default(io)
+        io = self.get_default(io)
         return rgbl@(self.M_RGBL2XYZ(io).T)
     
     def xyz2rgbl(self, xyz, io = None):
-        io = self._default(io)
+        io = self.get_default(io)
         return xyz@(self.M_RGBL2XYZ(io, True).T)
 
     def rgb2rgbl(self, rgb):
@@ -155,19 +94,19 @@ class RGB_Base:
         return gamma_correction(rgbl, 1/self.gamma)
 
     def rgb2xyz(self, rgb, io = None):
-        io = self._default(io)
+        io = self.get_default(io)
         return self.rgbl2xyz(self.rgb2rgbl(rgb), io) 
 
     def xyz2rgb(self, xyz, io = None):
-        io = self._default(io)
+        io = self.get_default(io)
         return self.rgbl2rgb(self.xyz2rgbl(xyz, io)) 
 
     def rgbl2lab(self, rgbl, io = None):
-        io = self._default(io)
+        io = self.get_default(io)
         return xyz2lab(self.rgbl2xyz(rgbl, io), io)
     
     def rgb2lab(self, rgb, io = None):
-        io = self._default(io)
+        io = self.get_default(io)
         return self.rgbl2lab(self.rgb2rgbl(rgb), io)
         
 class sRGB_Base(RGB_Base):
@@ -279,13 +218,13 @@ class REC_2020_RGB(sRGB_Base):
         self.xb, self.yb = 0.131, 0.046
         self.alpha, self.beta, self.phi, self.gamma = 1.09929682680944, 0.018053968510807, 4.5, 1/0.45    
 
+def get_colorspace(colorspace):
+    if isinstance(colorspace, str):
+        return globals()[colorspace]
+    return colorspace
 
 def colorconvert(color, src, dst):
-    if isinstance(src, str):
-        src = globals()[src]
-    if isinstance(dst, str):
-        dst = globals()[dst]    
-    return dst.xyz2rgb(src.rgb2xyz(color, D65_2), D65_2)
+    return get_colorspace(dst).xyz2rgb(get_colorspace(src).rgb2xyz(color, D65_2), D65_2)
 
 if __name__ == "__main__":
     pass
