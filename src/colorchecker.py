@@ -12,18 +12,19 @@ class ColorChecker:
 		'''
 		# colorspace and color
 		self.lab, self.rgb = None, None
-		self.cs = get_colorspace(colorspace)
+		self.cs, self.io = None, None
 		if colorspace == 'LAB':
 			self.lab = color
+			self.io = io
 		else:
 			self.rgb = color
-		self.io = io
+			self.cs = get_colorspace(colorspace)
 
 		# white_mask & color_mask
 		if whites is None:
-			self.white_mask = np.zeros(color.shape, dtype=bool)
+			self.white_mask = np.zeros(color.shape[0], dtype=bool)
 		else:
-			self.white_mask = np.ones(color.shape, dtype=bool)
+			self.white_mask = np.ones(color.shape[0], dtype=bool)
 			self.white_mask[whites] = False
 		self.color_mask = ~self.white_mask
 
@@ -34,16 +35,16 @@ class ColorCheckerMetric:
 		'''
 
 		self.cc = colorchecker
-		self.cs = globals()[colorspace]
+		self.cs = get_colorspace(colorspace)
 		self.io = io
 
-		if self.cc.lab:
+		if self.cc.lab is not None:
 			self.lab = lab2lab(self.cc.lab, self.cc.io, io)
 			self.xyz = lab2xyz(self.lab, io)
 			self.rgbl = self.cs.xyz2rgbl(self.xyz, io)
 			self.rgb = self.cs.rgbl2rgb(self.rgbl)
 		else:
-			self.rgb = colorconvert(self.cc.rgb, self.cs, self.cs)
+			self.rgb = colorconvert(self.cc.rgb, self.cc.cs, self.cs)
 			self.rgbl = self.cs.rgb2rgbl(self.rgb)
 			self.xyz = self.cs.rgbl2xyz(self.rgbl)
 			self.lab = xyz2lab(self.xyz)

@@ -76,36 +76,36 @@ fileDict = {'imgs/input1.png': np.array([[214.11,  98.67,  37.97],
        [ 42.23,  56.92,  52.76],
        [ 21.6 ,  31.25,  27.78]])}
 
-def test(filename, savetag, **kwargs):
+def test(filename, savetag, series_tag, L=False, **kwargs):
+    print(f"======={savetag}===========")
     img = cv2.imread(filename)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)/255.
     src = fileDict[filename]
     ccm = color_calibration(src/255, **kwargs)
-    img = ccm.infer_image_256(img)
+    img = ccm.infer_image(filename, L)
     head, end = os.path.splitext(filename)
-    cv2.imwrite(head + '_' + str(savetag) + end, img)    
+    cv2.imwrite(head + '_' + str(series_tag) + str(savetag) + end, img)    
 
-def test_1():
-    test('imgs/input1.png', 1)
-    test('imgs/input1.png', 2, initial_value='least_square',pre_linear='gray_polyfit', pre_deg=3)
-    test('imgs/input1.png', 3, distance = 'rgb', post_linear='identity')
-    test('imgs/input1.png', 4, pre_linear='identity', distance = 'rgb', post_linear='identity')
-    test('imgs/input1.png', 5, distance = 'rgb')
-    test('imgs/input1.png', 6, pre_linear='gamma', pre_gamma=2.2, post_linear='gamma', post_gamma=2.2)
-    test('imgs/input1.png', 7, distance = 'de94', pre_linear='color_polyfit')
+def test_1(series_tag='A'):
+    test('imgs/input1.png', 1, series_tag)
+    test('imgs/input1.png', 2, series_tag, linear='gray_polyfit', ccm_shape = '4x3')
+    test('imgs/input1.png', 3, series_tag, distance = 'rgbl', linear='gray_logpolyfit', deg = 3)
+    test('imgs/input1.png', 4, series_tag, L=True, linear='identity', distance = 'rgb')
+    test('imgs/input1.png', 5, series_tag, weights_coeff = 1, linear='color_polyfit', deg = 2)
+    test('imgs/input1.png', 6, series_tag, distance = 'de94', linear='color_logpolyfit', deg = 3)
 
-def test_2():
-    test('imgs/input2.png', 1, distance = 'rgb', pre_linear='identity')
-    test('imgs/input2.png', 2, distance = 'de00', pre_linear='identity', post_linear='gamma', post_gamma=2.2)
+def test_2(series_tag='A'):
+    test('imgs/input2.png', 1, series_tag, distance = 'rgb', pre_linear='identity')
+    test('imgs/input2.png', 2, series_tag, distance = 'de00', pre_linear='identity', post_linear='gamma', post_gamma=2.2)
 
-def test_3():
-    test('imgs/input3.png', 1, distance = 'de00', pre_linear='gamma', pre_gamma=2.2,initial_value='least_square')
-    test('imgs/input3.png', 2, distance = 'de00', pre_linear='gamma', pre_gamma=2.2)
-    test('imgs/input3.png', 3, distance = 'de00', initial_value='least_square')
-    test('imgs/input3.png', 4, distance = 'de00', initial_value='least_square', pre_linear='color_polyfit', pre_deg = 3)
-    test('imgs/input3.png', 5, distance = 'de00', initial_value='least_square', pre_linear='gray_polyfit', pre_deg = 3)
+def test_3(series_tag='A'):
+    test('imgs/input3.png', 1, series_tag, distance = 'de00', pre_linear='gamma', pre_gamma=2.2,initial_value='least_square')
+    test('imgs/input3.png', 2, series_tag, distance = 'de00', pre_linear='gamma', pre_gamma=2.2)
+    test('imgs/input3.png', 3, series_tag, distance = 'de00', initial_value='least_square')
+    test('imgs/input3.png', 4, series_tag, distance = 'de00', initial_value='least_square', pre_linear='color_polyfit', pre_deg = 3)
+    test('imgs/input3.png', 5, series_tag, distance = 'de00', initial_value='least_square', pre_linear='gray_polyfit', pre_deg = 3)
 
 if __name__ == "__main__":
-    # test_1()
+    test_1()
     # test_2()
-    test_3()
+    # test_3()

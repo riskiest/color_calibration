@@ -25,7 +25,7 @@ class RGB_Base:
 
     @property
     def M_RGBL2XYZ_base(self):
-        if self._M_RGBL2XYZ_base:
+        if self._M_RGBL2XYZ_base is not None:
             return self._M_RGBL2XYZ_base
         return self.cal_M_RGBL2XYZ_base()
 
@@ -125,7 +125,7 @@ class sRGB(sRGB_Base):
     # Data from http://www.brucelindbloom.com/index.html?ColorCheckerRGB.html
     def __init__(self):
         super().__init__()
-        self.M_RGBL2XYZ_base = np.array([[0.41239080, 0.35758434, 0.18048079],
+        self._M_RGBL2XYZ_base = np.array([[0.41239080, 0.35758434, 0.18048079],
                 [0.21263901 ,0.71516868 ,0.07219232],
                 [0.01933082 ,0.11919478 ,0.95053215]])
 
@@ -187,7 +187,7 @@ class REC_2020_RGB(sRGB_Base):
 
 def get_colorspace(colorspace):
     if isinstance(colorspace, str):
-        return globals()[colorspace]
+        return globals()[colorspace]()
     return colorspace
 
 def colorconvert(color, src, dst):

@@ -37,6 +37,7 @@ class Linear_color_polyfit(Linear):
         self.deg = deg
         mask = saturate(src, *saturated_threshold)
         self.src, self.dst = src[mask], colorchecker.rgbl[mask]
+        self.calc()
 
     def calc(self):
         '''
@@ -46,9 +47,9 @@ class Linear_color_polyfit(Linear):
         rs, gs, bs = self.src[..., 0], self.src[..., 1], self.src[..., 2]
         rd, gd, bd = self.dst[..., 0], self.dst[..., 1], self.dst[..., 2]
 
-        pr, *_ = np.polyfit(rs, rd, self.deg, full=True)
-        pg, *_ = np.polyfit(gs, gd, self.deg, full=True)
-        pb, *_ = np.polyfit(bs, bd, self.deg, full=True)
+        pr = np.polyfit(rs, rd, self.deg)
+        pg = np.polyfit(gs, gd, self.deg)
+        pb = np.polyfit(bs, bd, self.deg)
 
         self.pr, self.pg, self.pb = np.poly1d(pr), np.poly1d(pg), np.poly1d(pb)
 
@@ -68,6 +69,7 @@ class Linear_color_logpolyfit(Linear):
         self.deg = deg
         mask = saturate(src, *saturated_threshold)
         self.src, self.dst = src[mask], colorchecker.rgbl[mask]
+        self.calc()
 
     def calc(self):
         rs, gs, bs = self.src[..., 0], self.src[..., 1], self.src[..., 2]
@@ -76,8 +78,8 @@ class Linear_color_logpolyfit(Linear):
         # 如果s和d值有为<=0，则该处的点不参与polyfit
         def _polyfit(s, d, deg):
             mask = (s>0) & (d>0)
-            s = mask[s]
-            d = mask[d]
+            s = s[mask]
+            d = d[mask]
             p = np.polyfit(np.log(s), np.log(d), deg)
             return np.poly1d(p)
         
@@ -87,8 +89,10 @@ class Linear_color_logpolyfit(Linear):
     def linearize(self, inp):
         def _lin(p, x):
             mask = x>0
-            x[mask] = np.exp(p(np.log(x[mask])))
-            x[~mask] = 0
+            y = x.copy()
+            y[mask] = np.exp(p(np.log(x[mask])))
+            y[~mask] = 0
+            return y
         r, g, b = inp[..., 0], inp[..., 1], inp[..., 2]
         return np.stack([_lin(self.pr, r), _lin(self.pg, g), _lin(self.pb, b)], axis=-1)
 
@@ -132,8 +136,8 @@ class Linear_gray_logpolyfit(Linear):
         # 如果s和d值有为<=0，则该处的点不参与polyfit
         def _polyfit(s, d, deg):
             mask = (s>0) & (d>0)
-            s = mask[s]
-            d = mask[d]
+            s = s[mask]
+            d = d[mask]
             p = np.polyfit(np.log(s), np.log(d), deg)
             return np.poly1d(p)
         
@@ -142,7 +146,9 @@ class Linear_gray_logpolyfit(Linear):
     def linearize(self, inp):
         def _lin(p, x):
             mask = x>0
-            x[mask] = np.exp(p(np.log(x[mask])))
-            x[~mask] = 0
+            y = x.copy()
+            y[mask] = np.exp(p(np.log(x[mask])))
+            y[~mask] = 0
+            return y
 
         return _lin(self.p, inp)

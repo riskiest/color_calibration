@@ -3,6 +3,7 @@ from scipy.optimize import minimize, fmin
 from .colorspace import *
 from .colorchecker import *
 from .utils import *
+from .distance import *
 from cv2 import cv2
 
 class CCM_3x3:
@@ -16,11 +17,13 @@ class CCM_3x3:
         
         # colorchecker
         dist_io = IO(dist_illuminant, dist_observer)
-        self.cs = globals()[colorspace].set_default(dist_io)
+        self.cs = globals()[colorspace]()
+        self.cs.set_default(dist_io)
+        # self.cs = globals()[colorspace].set_default(dist_io)
         if dst:
             cc = ColorChecker(dst, dst_colorspace, IO(dst_illuminant, dst_observer), dst_whites)
         else:
-            cc = globals()['ColorChecker_' + colorchecker]
+            cc = globals()['colorchecker_' + colorchecker]
         self.cc = ColorCheckerMetric(cc, self.cs, dist_io)
 
         # linear method
@@ -34,7 +37,7 @@ class CCM_3x3:
             为1时为与亮度的平方根成正比'''
             self.weights = np.power(self.cc.lab[..., 0], weights_coeff)
         
-        weight_mask = np.ones(dst.shape, dtype=bool)
+        weight_mask = np.ones(self.src.shape[0], dtype=bool)
         if weight_color:
             weight_mask = self.cc.color_mask
 
@@ -54,7 +57,7 @@ class CCM_3x3:
         self.dst_rgb_masked = self.cc.rgb[self.mask]
         self.dst_rgbl_masked = self.cc.rgbl[self.mask]
         self.dst_lab_masked = self.cc.lab[self.mask]
-        if self.weights:
+        if self.weights is not None:
             self.weights_masked = self.weights[self.mask]
             '''weights归一化不影响结果，但好处在于可以进行横向比较（不同配置的比较）'''
             self.weights_masked_norm = self.weights_masked/np.mean(self.weights_masked)
@@ -134,7 +137,7 @@ class CCM_3x3:
         lab_est = self.cs.rgbl2lab(self.src_rgbl_masked@ccm)
         dist = self.distance(lab_est, self.dst_lab_masked)
         dist = np.power(dist, 2)
-        if self.weights:
+        if self.weights is not None:
             dist = self.weights_masked_norm*dist
         return sum(dist)
 
@@ -172,11 +175,11 @@ class CCM_3x3:
             return img_ccm
         return self.cs.rgbl2rgb(img_ccm)
 
-    def infer_image_256(self, imgfile, L=False, inp_size=255, out_size=255, out_dtype = np.uint8):
+    def infer_image(self, imgfile, L=False, inp_size=255, out_size=255, out_dtype = np.uint8):
         '''infer image and output as an BGR image with uint8 type
         mainly for debug!
         '''
-        img = cv2.imread(imgfile).astype(np.double)
+        img = cv2.imread(imgfile)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)/inp_size
         out = self.infer(img, L)
         img = np.minimum(np.maximum(np.round(out*out_size), 0), out_size)
@@ -189,7 +192,7 @@ class CCM_4x3(CCM_3x3):
     
     @staticmethod
     def add_column(arr):
-        return np.c_[arr, np.ones(arr.shape[0])]
+        return np.c_[arr, np.ones((*arr.shape[:-1], 1))]
 
     def initial_white_balance(self, src_rgbl, dst_rgbl):
         '''calculate nonlinear-optimization initial value by white balance:
