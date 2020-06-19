@@ -24,7 +24,7 @@ There will be more functions in branch v2.
 
 Future functions:
 
-- [*] value linearization functions
+- [ ] value linearization functions (discard)
 - [x] value optimization
-- [*] auto gamma
-- [*] auto optimization
+- [ ] auto gamma (discard)
+- [ ] auto optimization (discard)
