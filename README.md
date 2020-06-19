@@ -22,9 +22,9 @@ There will be more functions in branch v2.
 - [x] new distance function
 - [x] rgb or bgr (determined: only rgb)
 
-Future functions (won't do unless it has merged by OpenCV):
+Future functions:
 
-- [ ] value linearization functions
-- [ ] value optimization
-- [ ] auto gamma
-- [ ] auto optimization
+- [*] value linearization functions
+- [x] value optimization
+- [*] auto gamma
+- [*] auto optimization
