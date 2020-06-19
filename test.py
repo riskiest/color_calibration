@@ -1,4 +1,5 @@
 from src.api import color_calibration
+from src.colorchecker import ColorChecker2005_LAB_D50_2, ColorChecker2005_LAB_D65_2
 from cv2 import cv2
 import numpy as np
 import os
@@ -82,17 +83,19 @@ def test(filename, savetag, series_tag, L=False, **kwargs):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)/255.
     src = fileDict[filename]
     ccm = color_calibration(src/255, **kwargs)
+    ccm.value(100000)
     img = ccm.infer_image(filename, L)
     head, end = os.path.splitext(filename)
     cv2.imwrite(head + '_' + str(series_tag) + str(savetag) + end, img)    
 
 def test_1(series_tag='A'):
     test('imgs/input1.png', 1, series_tag)
-    test('imgs/input1.png', 2, series_tag, linear='gray_polyfit', ccm_shape = '4x3')
-    test('imgs/input1.png', 3, series_tag, distance = 'rgbl', linear='gray_logpolyfit', deg = 3)
-    test('imgs/input1.png', 4, series_tag, L=True, linear='identity', distance = 'rgb')
-    test('imgs/input1.png', 5, series_tag, weights_coeff = 1, linear='color_polyfit', deg = 2)
-    test('imgs/input1.png', 6, series_tag, distance = 'de94', linear='color_logpolyfit', deg = 3)
+    test('imgs/input1.png', 2, series_tag, ccm_shape = '4x3')
+    # test('imgs/input1.png', 2, series_tag, linear='gray_polyfit', ccm_shape = '4x3')
+    # test('imgs/input1.png', 3, series_tag, distance = 'rgbl', linear='gray_logpolyfit', deg = 3)
+    # test('imgs/input1.png', 4, series_tag, L=True, linear='identity', distance = 'rgb')
+    # test('imgs/input1.png', 5, series_tag, weights_coeff = 1, linear='color_polyfit', deg = 2)
+    # test('imgs/input1.png', 6, series_tag, distance = 'de94', linear='color_logpolyfit', deg = 3)
 
 def test_2(series_tag='A'):
     test('imgs/input2.png', 1, series_tag, distance = 'rgb', pre_linear='identity')

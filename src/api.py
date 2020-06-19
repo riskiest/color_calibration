@@ -6,7 +6,7 @@ def color_calibration(src,
         ccm_shape = '3x3', saturated_threshold = (0.02, 0.98), colorspace = 'sRGB',
         linear = 'gamma', gamma = 2.2, deg = 3, 
         distance = 'de00', dist_illuminant = 'D65', dist_observer = '2',
-        weights_list = None, weights_coeff = 0, weight_color = False,
+        weights_list = None, weights_coeff = 0, weights_color = False,
         initial_method = 'least_square', xtol = 1e-4, ftol = 1e-4):
         
     '''
@@ -71,5 +71,5 @@ def color_calibration(src,
     '''
     return globals()['CCM_'+ccm_shape](src, dst, dst_colorspace, dst_illuminant, dst_observer, 
         dst_whites, colorchecker, saturated_threshold, colorspace, linear, gamma, deg, 
-        distance, dist_illuminant, dist_observer, weights_list, weights_coeff, weight_color,
+        distance, dist_illuminant, dist_observer, weights_list, weights_coeff, weights_color,
         initial_method, xtol, ftol)

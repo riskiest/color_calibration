@@ -21,11 +21,9 @@ class ColorChecker:
 			self.cs = get_colorspace(colorspace)
 
 		# white_mask & color_mask
-		if whites is None:
-			self.white_mask = np.zeros(color.shape[0], dtype=bool)
-		else:
-			self.white_mask = np.ones(color.shape[0], dtype=bool)
-			self.white_mask[whites] = False
+		self.white_mask = np.zeros(color.shape[0], dtype=bool)
+		if whites is not None:
+			self.white_mask[whites] = True
 		self.color_mask = ~self.white_mask
 
 class ColorCheckerMetric:

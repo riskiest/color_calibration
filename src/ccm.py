@@ -5,11 +5,12 @@ from .colorchecker import *
 from .utils import *
 from .distance import *
 from cv2 import cv2
+import numpy as np
 
 class CCM_3x3:
     def __init__(self, src, dst, dst_colorspace, dst_illuminant, dst_observer, 
         dst_whites, colorchecker, saturated_threshold, colorspace, linear, gamma, deg, 
-        distance, dist_illuminant, dist_observer, weights_list, weights_coeff, weight_color,
+        distance, dist_illuminant, dist_observer, weights_list, weights_coeff, weights_color,
         initial_method, xtol, ftol):
 
         # src
@@ -38,7 +39,7 @@ class CCM_3x3:
             self.weights = np.power(self.cc.lab[..., 0], weights_coeff)
         
         weight_mask = np.ones(self.src.shape[0], dtype=bool)
-        if weight_color:
+        if weights_color:
             weight_mask = self.cc.color_mask
 
         # drop the saturated value, the _masked means the drop is done
@@ -122,11 +123,23 @@ class CCM_3x3:
         res = fmin(self.loss_rgb, ccm0, xtol = self.xtol, ftol = self.ftol)
         if res is not None:
             self.ccm = res.reshape((-1,3))
+            self.error = (self.loss_rgb(res)/self.masked_len)**0.5
             print('ccm', self.ccm)
-            print('error:', (self.loss_rgb(res)/self.masked_len)**0.5)
+            print('error:', self.error)
+
+    def loss_rgbl(self, ccm):
+        dist = np.sum(np.power(self.dst_rgbl_masked-self.src_rgbl_masked@self.ccm, 2), axis=-1)
+        if self.weights is not None:
+            dist = self.weights_masked_norm*dist
+        return sum(dist)        
 
     def calculate_rgbl(self):
-        self.ccm = self.initial_least_square(self.src_rgbl_masked, self.dst_rgbl_masked)
+        if self.weights is None: 
+            self.ccm = self.initial_least_square(self.src_rgbl_masked, self.dst_rgbl_masked)
+        else:
+            w = np.diag(np.power(self.weights_masked_norm, 0.5))
+            self.ccm = self.initial_least_square(self.src_rgbl_masked@w, self.dst_rgbl_masked@w)
+        self.error = (self.loss_rgbl(self.ccm)/self.masked_len)**0.5
 
     def loss(self, ccm):
         '''
@@ -148,22 +161,34 @@ class CCM_3x3:
         res = fmin(self.loss, ccm0, xtol = self.xtol, ftol = self.ftol)
         if res is not None:
             self.ccm = res.reshape((-1,3))
+            self.error = (self.loss(res)/self.masked_len)**0.5
             print('ccm:', self.ccm)
-            print('error:', (self.loss(res)/self.masked_len)**0.5)
+            print('error:', self.error)
 
-    def value(self):
+    def value(self, number = 10000):
         '''对全流程计算结果进行评价，全流程包括：
         1. 线性化
         2. CCM
         3. 反线性化
         主要在2个方面：
-        1. 饱和度，多少输入在返回时被截断了（即输入"属于[0,1]输出在[0,1]外"占输入的比例）；
-        2. 分布度，函数返回值在[0, 1]^3的空间的比例
+        1. error
+        2. 饱和度，多少输入在返回时被截断了（即输入"属于[0,1]输出在[0,1]外"占输入的比例）；
+        3. 分布度，函数返回值在[0, 1]^3的空间的比例
         很可能将 饱和度×分布度 作为最终的评价结果。
 
         这部分内容将在以后获得支持
         '''
-        pass
+        print('error:', self.error)
+        # 饱和度
+        rand = np.random.random((number, 3))
+        mask = saturate(self.infer(rand), 0, 1)
+        self.sat = np.sum(mask)/number
+        print('sat:', self.sat)
+        # 分布度
+        rgbl = self.cs.rgb2rgbl(rand)
+        mask = saturate(rgbl@np.linalg.inv(self.ccm), 0, 1)
+        self.dist = np.sum(mask)/number
+        print('dist:', self.dist)
 
     def infer(self, img, L=False):
         '''infer using calculated ccm'''
@@ -212,3 +237,29 @@ class CCM_4x3(CCM_3x3):
         if L:
             return img_ccm
         return self.cs.rgbl2rgb(img_ccm)
+
+    def value(self, number = 10000):
+        '''对全流程计算结果进行评价，全流程包括：
+        1. 线性化
+        2. CCM
+        3. 反线性化
+        主要在2个方面：
+        1. error
+        2. 饱和度，多少输入在返回时被截断了（即输入"属于[0,1]输出在[0,1]外"占输入的比例）；
+        3. 分布度，函数返回值在[0, 1]^3的空间的比例
+        很可能将 饱和度×分布度 作为最终的评价结果。
+
+        这部分内容将在以后获得支持
+        '''
+        print('error:', self.error)
+        # 饱和度
+        rand = np.random.random((number, 3))
+        mask = saturate(self.infer(rand), 0, 1)
+        self.sat = np.sum(mask)/number
+        print('sat:', self.sat)
+        # 分布度
+        rgbl = self.cs.rgb2rgbl(rand)
+        up, down = self.ccm[:3, :], self.ccm[3:, :]
+        mask = saturate((rgbl-np.ones((number, 1))@down)@np.linalg.inv(up), 0, 1)
+        self.dist = np.sum(mask)/number
+        print('dist:', self.dist)
