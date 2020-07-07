@@ -75,7 +75,7 @@ class CAM:
 
     @classmethod
     def cam(cls, sio, dio, method = 'Bradford'):
-        if (sio, dio) in cls.CAMs:
+        if (sio, dio, method) in cls.CAMs:
             return cls.CAMs[(sio, dio, method)]
         # function from http://www.brucelindbloom.com/index.html?ColorCheckerRGB.html
         XYZws = illuminants[sio]

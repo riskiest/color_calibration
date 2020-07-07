@@ -28,3 +28,4 @@ Future functions:
 - [x] value optimization
 - [ ] auto gamma (discard)
 - [ ] auto optimization (discard)
+- [ ] average RGB CS density, including relative detection

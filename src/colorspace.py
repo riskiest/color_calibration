@@ -72,9 +72,17 @@ class RGB_Base:
         io = self.choose_io(io)
         return xyz2lab(self.rgbl2xyz(rgbl, io), io)
     
+    def lab2rgbl(self, lab, io = None):
+        io = self.choose_io(io)
+        return self.xyz2rgbl(lab2xyz(lab, io), io)
+    
     def rgb2lab(self, rgb, io = None):
         io = self.choose_io(io)
         return self.rgbl2lab(self.rgb2rgbl(rgb), io)
+    
+    def lab2rgb(self, lab, io = None):
+        io = self.choose_io(io)
+        return self.xyz2rgb(lab2xyz(lab, io), io)
         
 class sRGB_Base(RGB_Base):
     # Data from http://www.brucelindbloom.com/index.html?ColorCheckerRGB.html
