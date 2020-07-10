@@ -1,6 +1,6 @@
 ## CCM Matrix
 
-CCM matrix is usually used as an approximation from linearized input color space to linear absolute color space transformation during color correction. 
+CCM matrix is usually used as an approximation for the transformation from linearized input color space to linear absolute color space during color correction. 
 
 The shape of the CCM matrix is usually $3\times3$ and $4\times3$[1-2]. The former performs linear transformation on the value of color, while the latter performs affine transformation. In other words. The color space keeps the origin unchanged after the former is transformed, while the latter can be translated. It can be seen that the transform set of the CCM matrix of $3\times3$ is the proper subset of $4\times3$, which means that the solution set fitted by the $4\times3$ CCM matrix is larger. However, the latest papers prefer to use the CCM matrix of $3\times3$ instead of the latter.
 
