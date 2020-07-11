@@ -22,7 +22,7 @@ Since the measured color space has not been calibrated, it cannot directly use t
 
 After the linearization of the measurement data, the linear transformation is used to transform the data into a linear absolute RGB color space. Performing a linear transformation is equivalent to multiplying by a matrix which we called the color correction matrix(CCM)[1]. The CCM matrix is also our goal for fitting. We can set the specific color space after linear transformation, such as Linear sRGB, Linear Adobe RGB, etc. Set 1 in the figure is the position to set the color space. Normally, the color space needs to be the same as the color space where you want to save the data so as to reduce the conversion of the color space in the inference process.
 
-The shape of the CCM matrix is usually $3\times3$ and $4\times3$. The former performs linear transformation on the value of color, while the latter performs affine transformation. In other words. The color space keeps the origin unchanged after the former is transformed, while the latter can be translated. It can be seen that the transform set of the CCM matrix of $3\times3$ is the proper subset of $4\times3$, which means that the solution set fitted by the $4\times3$ CCM matrix is larger. However, the latest papers prefer to use the CCM matrix of $3\times3$ instead of the latter.
+The shape of the CCM matrix is usually $3\times3$ or $4\times3$. The former performs linear transformation on the value of color, while the latter performs affine transformation. In other words. The color space keeps the origin unchanged after the linear transformation, while the latter can be translated. It can be seen that the transform set of the CCM matrix of $3\times3$ is the proper subset of $4\times3$, which means that the solution set fitted by the $4\times3$ CCM matrix is larger. However, the latest papers prefer to use the CCM matrix of $3\times3$ instead of the latter.
 
 ### Color Difference
 
@@ -134,9 +134,9 @@ The second is **supersaturation**. The first picture below is the original pictu
 
 ![image-20200701165718350](算法介绍.assets/image-20200701165718350.png)
 
-The third is **cover volume**. It is defined that the final output occupies the volume on $[0,1]^3$, that is, the volume of $S_4\cap[0,1]^3$. If supersaturation is the only evaluation metric, it is easy to make the model output result in the direction of reduction, which will lead to a reduction in the coverage volume. Therefore, with the coverage volume as the standard, the model can be comprehensively evaluated.
+The third is **coverage volume**. It is defined that the final output occupies the volume on $[0,1]^3$, that is, the volume of $S_4\cap[0,1]^3$. If supersaturation is the only evaluation metric, it is easy to make the model output result in the direction of reduction, which will lead to a reduction in the coverage volume. Therefore, with the coverage volume as the standard, the model can be comprehensively evaluated.
 
-It is very complex to directly calculate the integral for the judgment criteria of the second and third metric, and it is much simpler to use the Monte Carlo method. Random multiple colors, according to the input distribution, calculate the final color supersaturation, and obtain the mean value, which is the approximate value of the second metric; <font color=red> and the third metric could be obtained by generating colors uniformly in the $[0,1]^3$ space, inversely calculate whether the original image is in the $[0,1]^3$ space, and the ratio obtained is the coverage volume.</font>
+It is very complex to directly calculate the integral for the judgment criteria of the second and third metric, and it is much simpler to use the Monte Carlo method. Random multiple colors, according to the input distribution, calculate the final color supersaturation, and obtain the mean value  which is the approximate value of the second metric; <font color=red> and the third metric could be obtained by generating colors uniformly in the $[0,1]^3$ space. Through inversely calculation, the ratio that how much the original image is in the $[0,1]^3$ space, which we call it coverage volume.</font>
 
 
 

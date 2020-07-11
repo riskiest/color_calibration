@@ -117,7 +117,7 @@ All RGB color space values must be normalized, that is, the values are between [
 
 ![image-20200708154138215](色彩空间.assets/image-20200708154138215.png)
 
-###<font color=red> Convert Linear RGB To Same White Point XYZ </font>
+###<font color=red> Convert Linear RGB to Same White Point XYZ </font>
 
 Once the three primary colors and the white point have been determined, the linear RGB space has been sett. The XYZ space also needs to define a white point to represent absolute colors, so we can express the RGB space as the XYZ color space where the white point is defined on the white point of the RGB space.
 $$
