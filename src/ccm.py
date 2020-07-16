@@ -12,57 +12,60 @@ class CCM_3x3:
         dst_whites, colorchecker, saturated_threshold, colorspace, linear, gamma, deg, 
         distance, dist_illuminant, dist_observer, weights_list, weights_coeff, weights_color,
         initial_method, xtol, ftol):
+        '''
+        After being called, the method produce a CCM_3x3 instance (a color correction 
+        model in fact) for inference.
 
-        # src
+        The meanings of the arguments have been detailed in api.py;
+        '''
+
+        # detected colors
         self.src = src
         
-        # colorchecker
-        dist_io = IO(dist_illuminant, dist_observer)
+        # the absolute RGB color space that detected colors convert to
+        self.dio = IO(dist_illuminant, dist_observer)
         self.cs = globals()[colorspace]()
-        self.cs.set_default(dist_io)
-        # self.cs = globals()[colorspace].set_default(dist_io)
+
+        # see notes of colorchecker.py for difference between 
+        # ColorChecker and ColorCheckerMetric
         if dst:
             cc = ColorChecker(dst, dst_colorspace, IO(dst_illuminant, dst_observer), dst_whites)
         else:
             cc = globals()['colorchecker_' + colorchecker]
-        self.cc = ColorCheckerMetric(cc, self.cs, dist_io)
+        self.cc = ColorCheckerMetric(cc, self.cs, self.dio)
 
         # linear method
         self.linear = globals()['Linear_'+linear](gamma, deg, src, self.cc, saturated_threshold)
         
+        # weights
         self.weights = None        
         if weights_list:
             self.weights = weights_list
         elif weights_coeff!=0:
-            '''注意，由于目标函数为sum(weights*d^2),意味着weights_coeff=2时，系数与亮度成正比；
-            为1时为与亮度的平方根成正比'''
             self.weights = np.power(self.cc.lab[..., 0], weights_coeff)
         
+        # mask
+        # weight_mask selects non-gray colors if weights_color is True;
+        # saturate_mask select non-saturated colors;
         weight_mask = np.ones(self.src.shape[0], dtype=bool)
         if weights_color:
             weight_mask = self.cc.color_mask
-
-        # drop the saturated value, the _masked means the drop is done
-        # we want to get 
-        # if dist == 'rgb':
-        #    src.rgbl, dst.rgb
-        # elif dist == 'rgbl':
-        #    src.rgbl, dst.rgbl
-        # else:
-        #    src.rgbl, dst.lab
         saturate_mask = saturate(src, *saturated_threshold)
         self.mask = saturate_mask & weight_mask
+
+        # prepare the data; _masked means colors having been filtered
         self.src_rgbl = self.linear.linearize(self.src)
-        self.src_rgb_masked = self.src[self.mask]
+        self.src_masked = self.src[self.mask]
         self.src_rgbl_masked = self.src_rgbl[self.mask]
         self.dst_rgb_masked = self.cc.rgb[self.mask]
         self.dst_rgbl_masked = self.cc.rgbl[self.mask]
         self.dst_lab_masked = self.cc.lab[self.mask]
+
+        # prepare the weights;
         if self.weights is not None:
             self.weights_masked = self.weights[self.mask]
-            '''weights归一化不影响结果，但好处在于可以进行横向比较（不同配置的比较）'''
             self.weights_masked_norm = self.weights_masked/np.mean(self.weights_masked)
-        self.masked_len = len(self.src_rgb_masked)
+        self.masked_len = len(self.src_masked)
 
         # the nonlinear optimization options:
         # 1. distance function
@@ -72,52 +75,67 @@ class CCM_3x3:
         # 3. xtol and ftol
         self.xtol = xtol
         self.ftol = ftol
-        # the output
+        # 4. the output
         self.ccm = None
 
+        # empty for CCM_3x3, not empty for CCM_4x3
+        # make __init__ method can also be used by CCM_4x3 class
         self.prepare()
 
-        # distance function may affect the loss function and the calculate function
-        # 'rgbl distance'
+        # distance function may affect the loss function and the fitting function
         if distance == 'rgb':
-            self.calculate_rgb()
+            self.fitting_rgb()
         elif distance == 'rgbl':
-            self.calculate_rgbl()
+            self.fitting_rgbl()
         else:
-            self.calculate()
+            self.fitting()
     
     def prepare(self):
+        '''make no change for CCM_3x3 class'''
         pass
         
     def initial_white_balance(self, src_rgbl, dst_rgbl):
-        '''calculate nonlinear-optimization initial value by white balance:
+        '''
+        fitting nonlinear-optimization initial value by white balance:
         res = diag(mean(s_r)/mean(d_r), mean(s_g)/mean(d_g), mean(s_b)/mean(d_b))
-        https://www.imatest.com/docs/colormatrix/
+        see CCM.pdf for details;
         '''
         rs, gs, bs = np.sum(src_rgbl, axis = 0)
         rd, gd, bd = np.sum(dst_rgbl, axis = 0)
         return np.array([[rd/rs, 0, 0], [0, gd/gs, 0], [0, 0, bd/bs]]) 
 
     def initial_least_square(self, src_rgbl, dst_rgbl):
-        '''calculate nonlinear-optimization initial value by least square:
+        '''
+        fitting nonlinear-optimization initial value by least square:
         res = np.linalg.lstsq(src_rgbl, dst_rgbl)
+        see CCM.pdf for details;
         '''        
         return np.linalg.lstsq(src_rgbl, dst_rgbl, rcond=None)[0]  
 
-    def loss_rgb(self, ccm):
-        '''loss function if distance function is rgb
-        it is square-sum of color difference between src_rgbl@ccm and dst
-        '''
-        ccm = ccm.reshape((-1, 3))
-        lab_est = self.cs.rgbl2rgb(self.src_rgbl_masked@ccm)
-        dist = self.distance(lab_est, self.dst_rgb_masked)
+    def distances(self, src, dst):
+        '''calculate the weighted-sum distance from src and dst'''
+        dist = self.distance(src, dst)
         dist = np.power(dist, 2)
         if self.weights:
             dist = self.weights_masked_norm*dist
-        return sum(dist)
+        return sum(dist)     
 
-    def calculate_rgb(self):
-        '''calculate ccm if distance function is rgb'''
+    def loss_rgb(self, ccm):
+        '''
+        loss function if distance function is rgb
+        it is square-sum of color difference between src_rgbl@ccm and dst
+        '''
+        ccm = ccm.reshape((-1, 3))
+        return self.distances(self.cs.rgbl2rgb(self.src_rgbl_masked@ccm), self.dst_rgb_masked)
+        # lab_est = self.cs.rgbl2rgb(self.src_rgbl_masked@ccm)
+        # dist = self.distance(lab_est, self.dst_rgb_masked)
+        # dist = np.power(dist, 2)
+        # if self.weights:
+        #     dist = self.weights_masked_norm*dist
+        # return sum(dist)
+
+    def fitting_rgb(self):
+        '''fitting ccm if distance function is rgb'''
         ccm0 = self.inital_func(self.src_rgbl_masked, self.dst_rgbl_masked) 
         ccm0 = ccm0.reshape((-1))
         res = fmin(self.loss_rgb, ccm0, xtol = self.xtol, ftol = self.ftol)
@@ -127,19 +145,20 @@ class CCM_3x3:
             print('ccm', self.ccm)
             print('error:', self.error)
 
-    def loss_rgbl(self, ccm):
-        dist = np.sum(np.power(self.dst_rgbl_masked-self.src_rgbl_masked@self.ccm, 2), axis=-1)
-        if self.weights is not None:
-            dist = self.weights_masked_norm*dist
-        return sum(dist)        
+    # def loss_rgbl(self, ccm):
+    #     dist = np.sum(np.power(self.dst_rgbl_masked-self.src_rgbl_masked@self.ccm, 2), axis=-1)
+    #     if self.weights is not None:
+    #         dist = self.weights_masked_norm*dist
+    #     return sum(dist)        
 
-    def calculate_rgbl(self):
+    def fitting_rgbl(self):
+        '''fitting ccm if distance function is rgbl'''
         if self.weights is None: 
-            self.ccm = self.initial_least_square(self.src_rgbl_masked, self.dst_rgbl_masked)
+            self.ccm, r, *_ = np.linalg.lstsq(self.src_rgbl_masked, self.dst_rgbl_masked)
         else:
             w = np.diag(np.power(self.weights_masked_norm, 0.5))
-            self.ccm = self.initial_least_square(self.src_rgbl_masked@w, self.dst_rgbl_masked@w)
-        self.error = (self.loss_rgbl(self.ccm)/self.masked_len)**0.5
+            self.ccm, r, *_  = np.linalg.lstsq(self.src_rgbl_masked@w, self.dst_rgbl_masked@w)
+        self.error = np.sum(r)
 
     def loss(self, ccm):
         '''
@@ -147,15 +166,16 @@ class CCM_3x3:
         it is square-sum of color difference between src_rgbl@ccm and dst
         '''
         ccm = ccm.reshape((-1, 3))
-        lab_est = self.cs.rgbl2lab(self.src_rgbl_masked@ccm)
-        dist = self.distance(lab_est, self.dst_lab_masked)
-        dist = np.power(dist, 2)
-        if self.weights is not None:
-            dist = self.weights_masked_norm*dist
-        return sum(dist)
+        return self.distances(self.cs.rgbl2lab(self.src_rgbl_masked@ccm, self.dio), self.dst_lab_masked)
+        # lab_est = self.cs.rgbl2lab(self.src_rgbl_masked@ccm, self.dio)
+        # dist = self.distance(lab_est, self.dst_lab_masked)
+        # dist = np.power(dist, 2)
+        # if self.weights is not None:
+        #     dist = self.weights_masked_norm*dist
+        # return sum(dist)
 
-    def calculate(self):
-        '''calculate ccm if distance function is de76 de94 and de00'''
+    def fitting(self):
+        '''fitting ccm if distance function is associated with CIE Lab color space'''
         ccm0 = self.inital_func(self.src_rgbl_masked, self.dst_rgbl_masked)
         ccm0 = ccm0.reshape((-1))
         res = fmin(self.loss, ccm0, xtol = self.xtol, ftol = self.ftol)
@@ -166,17 +186,11 @@ class CCM_3x3:
             print('error:', self.error)
 
     def value(self, number = 10000):
-        '''对全流程计算结果进行评价，全流程包括：
-        1. 线性化
-        2. CCM
-        3. 反线性化
-        主要在2个方面：
-        1. error
-        2. 饱和度，多少输入在返回时被截断了（即输入"属于[0,1]输出在[0,1]外"占输入的比例）；
-        3. 分布度，函数返回值在[0, 1]^3的空间的比例
-        很可能将 饱和度×分布度 作为最终的评价结果。
+        '''
+        evaluate the model by residual error, overall saturation and coverage volume;
+        see Algorithm.py for details;
 
-        这部分内容将在以后获得支持
+        NOTICE: The method is not yet complete.
         '''
         print('error:', self.error)
         # 饱和度
@@ -191,7 +205,7 @@ class CCM_3x3:
         print('dist:', self.dist)
 
     def infer(self, img, L=False):
-        '''infer using calculated ccm'''
+        '''infer using fittingd ccm'''
         if self.ccm is None:
             raise Exception('No CCM values!')
         img_lin = self.linear.linearize(img)
@@ -201,8 +215,9 @@ class CCM_3x3:
         return self.cs.rgbl2rgb(img_ccm)
 
     def infer_image(self, imgfile, L=False, inp_size=255, out_size=255, out_dtype = np.uint8):
-        '''infer image and output as an BGR image with uint8 type
-        mainly for debug!
+        '''
+        infer image and output as an BGR image with uint8 type
+        mainly for test or debug!
         '''
         img = cv2.imread(imgfile)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)/inp_size
@@ -213,23 +228,25 @@ class CCM_3x3:
 
 class CCM_4x3(CCM_3x3):
     def prepare(self):
+        '''see CCM.pdf for details'''
         self.src_rgbl_masked = self.add_column(self.src_rgbl_masked)
     
     @staticmethod
     def add_column(arr):
+        '''convert matrix A to [A, 1]'''
         return np.c_[arr, np.ones((*arr.shape[:-1], 1))]
 
     def initial_white_balance(self, src_rgbl, dst_rgbl):
-        '''calculate nonlinear-optimization initial value by white balance:
-        res = diag(mean(s_r)/mean(d_r), mean(s_g)/mean(d_g), mean(s_b)/mean(d_b))
-        https://www.imatest.com/docs/colormatrix/
+        '''
+        fitting nonlinear-optimization initial value by white balance:
+        see CCM.pdf for details;
         '''
         rs, gs, bs = np.sum(src_rgbl, axis = 0)
         rd, gd, bd = np.sum(dst_rgbl, axis = 0)
         return np.array([[rd/rs, 0, 0], [0, gd/gs, 0], [0, 0, bd/bs]]) 
 
     def infer(self, img, L=False):
-        '''infer using calculated ccm'''
+        '''infer using fittingd ccm'''
         if self.ccm is None:
             raise Exception('No CCM values!')
         img_lin = self.linear.linearize(img)
@@ -239,17 +256,11 @@ class CCM_4x3(CCM_3x3):
         return self.cs.rgbl2rgb(img_ccm)
 
     def value(self, number = 10000):
-        '''对全流程计算结果进行评价，全流程包括：
-        1. 线性化
-        2. CCM
-        3. 反线性化
-        主要在2个方面：
-        1. error
-        2. 饱和度，多少输入在返回时被截断了（即输入"属于[0,1]输出在[0,1]外"占输入的比例）；
-        3. 分布度，函数返回值在[0, 1]^3的空间的比例
-        很可能将 饱和度×分布度 作为最终的评价结果。
+        '''
+        evaluate the model by residual error, overall saturation and coverage volume;
+        see Algorithm.py for details;
 
-        这部分内容将在以后获得支持
+        NOTICE: The method is not yet complete.
         '''
         print('error:', self.error)
         # 饱和度

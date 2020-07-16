@@ -2,15 +2,23 @@ import numpy as np
 from .colorspace import *
 from .utils import *
 
+# Difference between ColorChecker and ColorCheckerMetric
+# 	The instance of ColorChecker describe the colorchecker by color values,
+# 	color space and gray indice, which are stable for a colorchecker.
+# 	The instance of ColorCheckerMetric adds the color space which is associated with 
+# 	the color distance function and the colorchecker converts to.
+
 class ColorChecker:
 	def __init__(self, color, colorspace, io, whites=None):
 		'''
-		color: colors of colorchecker patches;
-		colorspace: 'LAB' or a kind of 'RGB' color space;
-		io: needed if colorspace is 'LAB';
-		whites: sometimes needed for linearization;
+		the colorchecker;
+
+		color: reference colors of colorchecker;
+		colorspace: 'LAB' or some 'RGB' color space;
+		io: only valid if colorspace is 'LAB';
+		whites: the indice list of gray colors of the reference colors;
 		'''
-		# colorspace and color
+		# color and correlated color space
 		self.lab, self.rgb = None, None
 		self.cs, self.io = None, None
 		if colorspace == 'LAB':
@@ -52,7 +60,10 @@ class ColorCheckerMetric:
 		self.white_mask = self.cc.white_mask
 		self.color_mask = self.cc.color_mask
 		 
-
+'''
+Data is from https://www.imatest.com/wp-content/uploads/2011/11/Lab-data-Iluminate-D65-D50-spectro.xls
+see Miscellaneous.md for details.
+'''
 ColorChecker2005_LAB_D50_2 = np.array([[37.986, 13.555, 14.059],
 		[65.711, 18.13, 17.81],
 		[49.927, -4.88, -21.925],
@@ -103,5 +114,8 @@ ColorChecker2005_LAB_D65_2 = np.array([[37.542, 12.018, 13.33],
 		[35.68, -0.22, -1.205],
 		[20.475, 0.049, -0.972]])
 
+'''Macbeth ColorChecker with 2deg D50'''
 colorchecker_Macbeth = ColorChecker(ColorChecker2005_LAB_D50_2, 'LAB', D50_2, np.arange(18,24))
+
+'''Macbeth ColorChecker with 2deg D65'''
 colorchecker_Macbeth_D65_2 = ColorChecker(ColorChecker2005_LAB_D65_2, 'LAB', D65_2, np.arange(18,24))

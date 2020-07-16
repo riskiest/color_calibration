@@ -11,7 +11,7 @@ class RGB_Base:
         self.gamma = 2.2  
         self._M_RGBL2XYZ_base = None
         self._M_RGBL2XYZ = {}
-        self._default_io = D65_2
+        # self._default_io = D65_2
     
     def cal_M_RGBL2XYZ_base(self):
         XYZr = xyY2XYZ(self.xr, self.yr)
@@ -30,10 +30,10 @@ class RGB_Base:
         return self.cal_M_RGBL2XYZ_base()
 
     def choose_io(self, io = None):
-        return io or self._default_io
+        return io or self.io_base
     
-    def set_default(self, io):
-        self._default_io = io
+    # def set_default(self, io):
+    #     self._default_io = io
             
     def M_RGBL2XYZ(self, io = None, rev = False):
         io = self.choose_io(io)
