@@ -81,7 +81,7 @@ $$
 In addition, the following variables are usually introduced to simplify the expression of delinearization functions:
 $$
 \alpha=a+1\\
-\beta=K_0\phi
+\beta=K_0/\phi
 $$
 Then the conversion from linear RGB to nonlinear is as follows:
 $$

@@ -1,6 +1,10 @@
 import numpy as np
 
 class IO:
+    '''
+    io: illuminant & observer;
+    see notes of api.py for supported list for illuminant and observer; 
+    '''
     def __init__(self, illuminant, observer):
         self.illuminant = illuminant
         self.observer = observer
@@ -25,11 +29,12 @@ E_2 = IO("E", "2")
 E_10 = IO("E", "10")
 
 def xyY2XYZ(x,y,Y=1):
+    '''xyY to XYZ'''
     X = Y*x/y
     Z = Y/y*(1-x-y)
     return np.array([X,Y,Z])
     
-# data from https://en.wikipedia.org/wiki/Standard_illuminant
+'''data from https://en.wikipedia.org/wiki/Standard_illuminant'''
 illuminants_xy = \
     {A_2: (0.44757, 0.40745),
     A_10: (0.45117, 0.40594),
@@ -44,8 +49,9 @@ illuminants_xy = \
     E_2: (1/3, 1/3),
     E_10: (1/3, 1/3)}
 
-# illuminant matrices....
 def get_illuminant():
+    '''get illuminants'''
+
     illuminants = {}
     for io, (x, y) in illuminants_xy.items():
         illuminants[io] = xyY2XYZ(x, y)
@@ -55,10 +61,11 @@ def get_illuminant():
     illuminants[D65_10]=np.array([0.94811, 1., 1.07304])
     return illuminants
 
+# illuminants
 illuminants = get_illuminant()
 
-# chromatic adaption matrices
 class CAM:
+    '''chromatic adaption matrices'''
     CAMs = {}
 
     Von_Kries = np.array([[ 0.40024,  0.7076 , -0.08081],
@@ -75,6 +82,7 @@ class CAM:
 
     @classmethod
     def cam(cls, sio, dio, method = 'Bradford'):
+        '''get cam'''
         if (sio, dio, method) in cls.CAMs:
             return cls.CAMs[(sio, dio, method)]
         # function from http://www.brucelindbloom.com/index.html?ColorCheckerRGB.html
@@ -85,4 +93,5 @@ class CAM:
         cls.CAMs[(sio, dio, method)] = M
         return M
 
+'''function to get cam'''
 cam = CAM.cam

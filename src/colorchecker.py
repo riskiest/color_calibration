@@ -2,11 +2,15 @@ import numpy as np
 from .colorspace import *
 from .utils import *
 
-# Difference between ColorChecker and ColorCheckerMetric
-# 	The instance of ColorChecker describe the colorchecker by color values,
-# 	color space and gray indice, which are stable for a colorchecker.
-# 	The instance of ColorCheckerMetric adds the color space which is associated with 
-# 	the color distance function and the colorchecker converts to.
+'''
+Difference between ColorChecker and ColorCheckerMetric
+
+The instance of ColorChecker describe the colorchecker by color values,
+color space and gray indice, which are stable for a colorchecker.
+
+The instance of ColorCheckerMetric adds the color space which is associated with 
+the color distance function and the colorchecker converts to.
+'''
 
 class ColorChecker:
 	def __init__(self, color, colorspace, io, whites=None):
@@ -37,13 +41,17 @@ class ColorChecker:
 class ColorCheckerMetric:
 	def __init__(self, colorchecker, colorspace, io):
 		'''
-		dio: needed when calculating xyz, lab
+		the colorchecker adds the color space for conversion for color distance;
 		'''
 
+		# colorchecker
 		self.cc = colorchecker
+
+		# color space
 		self.cs = get_colorspace(colorspace)
 		self.io = io
 
+		# colors after conversion
 		if self.cc.lab is not None:
 			self.lab = lab2lab(self.cc.lab, self.cc.io, io)
 			self.xyz = lab2xyz(self.lab, io)

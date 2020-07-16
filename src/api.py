@@ -202,7 +202,7 @@ def color_calibration(src,
         sio, dio: source of io; destination of io;
         rgbl: linear RGB
         cs: color space;
-        cc: ColorChecker;
+        cc: Colorchecker;
         M: matrix
         ccm: color correction matrix;
         cam: chromatic adaption matrix;
