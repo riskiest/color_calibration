@@ -4,7 +4,7 @@ from .io_ import *
 
 def saturate(src, low, up):
     '''return the mask of unsaturated colors'''
-    return np.all(np.logical_and(src>=low,src<=up), axis = 1)               
+    return np.all(np.logical_and(src>=low,src<=up), axis = -1)               
 
 
 # =======some convection functions=========
@@ -24,7 +24,7 @@ def xyz2xyz(xyz, sio, dio):
     '''xyz->xyz with io changed'''
     if sio==dio:
         return xyz
-    return cam(sio, dio)@xyz
+    return xyz@cam(sio, dio).T
 
 def lab2lab(lab, sio, dio):
     '''lab->lab with io changed'''

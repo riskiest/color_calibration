@@ -14,6 +14,9 @@ class IO:
     
     def __hash__(self):
         return hash(self.illuminant+self.observer)
+    
+    def __repr__(self):
+        return f"{self.illuminant}_{self.observer}"
 
 A_2 = IO("A", "2")
 A_10 = IO("A", "10")
@@ -63,4 +66,4 @@ def get_illuminant():
 
 # illuminants
 illuminants = get_illuminant()
-
+# print(illuminants)

@@ -12,31 +12,34 @@ The instance of ColorCheckerMetric adds the color space which is associated with
 the color distance function and the colorchecker converts to.
 '''
 
-class ColorChecker:
-	def __init__(self, color, colorspace, io, whites=None):
-		'''
-		the colorchecker;
+# class ColorChecker:
+# 	def __init__(self, colors, whites=None):
+# 		'''
+# 		the colorchecker;
 
-		color: reference colors of colorchecker;
-		colorspace: 'LAB' or some 'RGB' color space;
-		io: only valid if colorspace is 'LAB';
-		whites: the indice list of gray colors of the reference colors;
-		'''
+# 		color: reference colors of colorchecker;
+# 		colorspace: 'LAB' or some 'RGB' color space;
+# 		io: only valid if colorspace is 'LAB';
+# 		whites: the indice list of gray colors of the reference colors;
+# 		'''
 		# color and correlated color space
-		self.lab, self.rgb = None, None
-		self.cs, self.io = None, None
-		if colorspace == 'LAB':
-			self.lab = color
-			self.io = io
-		else:
-			self.rgb = color
-			self.cs = get_colorspace(colorspace)
+		# self.lab, self.rgb = None, None
+		# self.cs, self.io = None, None
+		# if colorspace == 'LAB':
+		# 	self.lab = color
+		# 	self.io = io
+		# else:
+		# 	self.rgb = color
+		# 	self.cs = get_colorspace(colorspace)
+		# self.colors = colors
+
+		# 通过距离来决定是否白色，不再设定
 
 		# white_mask & color_mask
-		self.white_mask = np.zeros(color.shape[0], dtype=bool)
-		if whites is not None:
-			self.white_mask[whites] = True
-		self.color_mask = ~self.white_mask
+		# self.white_mask = np.zeros(colors.shape[0], dtype=bool)
+		# if whites is not None:
+		# 	self.white_mask[whites] = True
+		# self.color_mask = ~self.white_mask
 
 class ColorCheckerMetric:
 	def __init__(self, colorchecker, colorspace, io):
