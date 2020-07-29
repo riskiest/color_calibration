@@ -3,7 +3,7 @@ import numpy as np
 class IO:
     '''
     io: illuminant & observer;
-    see notes of api.py for supported list for illuminant and observer; 
+    see notes of api.py for supported list for io; 
     '''
     def __init__(self, illuminant, observer):
         self.illuminant = illuminant
@@ -14,6 +14,9 @@ class IO:
     
     def __hash__(self):
         return hash(self.illuminant+self.observer)
+    
+    def __repr__(self):
+        return f"{self.illuminant}_{self.observer}"
 
 A_2 = IO("A", "2")
 A_10 = IO("A", "10")
@@ -63,4 +66,3 @@ def get_illuminant():
 
 # illuminants
 illuminants = get_illuminant()
-

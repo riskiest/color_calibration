@@ -2,8 +2,8 @@ import unittest
 import sys
 sys.path.append(r'./')
 # print(sys.path)
-from newsrc.io_ import *
-# import newsrc
+from src.io_ import *
+# import src
 import numpy as np
 
 array = np.array

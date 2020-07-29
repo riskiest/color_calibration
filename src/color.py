@@ -4,16 +4,25 @@ from .distance import *
 
 class Color:
     def __init__(self, colors, cs):
+        '''
+        color defined by color_values and color space;
+        self.grays is mask of grayscale color;
+        self.colored is mask of colored color;
+        self._history is storage of historical conversion;
+        '''
         self.colors = colors
         self.cs = cs
         self.grays = None
         self.colored = None
         self._history = {}
-    
-    # def copy(self, cs=None):
-    #     return Color(self.colors.copy(), cs if cs is not None else self.cs)
-    
-    def to(self, cs, save=True):
+        
+    def to(self, cs, method = 'Bradford', save=True):
+        '''
+        change to other color space; return Color;
+        The conversion process incorporates linear transformations to speed up.
+        method is chromatic adapation method;
+        when save if True, get data from self._history first;
+        '''
         def do_operation(colors, operations):
             M = None
             for op in operations:
@@ -37,39 +46,45 @@ class Color:
         if f:
             return Color(f(self.colors), cs)
         
-        operations = [*self.cs.to, *(XYZ(self.cs.io).to(XYZ(cs.io))), *cs.from_]
+        operations = [*self.cs.to, *(XYZ(self.cs.io).cam(cs.io, method)), *cs.from_]
         colors = do_operation(self.colors, operations)
+        color = Color(colors, cs)
         if save:
-            self._history[cs] = colors
-        return colors
+            self._history[cs] = color
+        return color
 
-    def toGray(self, io, save=True):
-        return self.to(XYZ(io), save).colors[...,1]
+    def toGray(self, io, method = 'Bradford', save=True):
+        '''self.cs -> gray'''
+        return self.to(XYZ(io), method, save).colors[...,1]
 
-    def toLuminant(self, io, save=True):
-        return self.to(Lab(io), save).colors[...,0]
+    def toLuminant(self, io, method = 'Bradford', save=True):
+        '''self.cs -> L*'''
+        return self.to(Lab(io), method, save).colors[...,0]
 
-    def get_gray(self, JDN=1):
+    def get_gray(self, JDN=2):
+        '''calculate gray mask'''
         color = self.to(Lab_D65_2).colors
         L = color[..., 0]
         a, b = np.zeros(L.shape), np.zeros(L.shape)
         gray = np.stack([L, a, b], axis=-1)
         dis = distance_de00(color, gray)
-        self.grays = dis<JDN
+        # print(dis)
+        self.grays = (dis<JDN)
         self.colored = ~self.grays
     
-
-    def _diff(self, other, method):
-        return globals()['distance_'+method](self.colors, other.colors)     
-
-    def diff(self, other, method='de00'):
-        '''type(other)==colors'''
+    def diff(self, other, method='de00', io = None):
+        '''return distance between self and other'''
+        if not io: 
+            io=self.cs.io
         if method in ['de00', 'de94', 'de76', 'cmc']:
-            return self._diff(self.to(Lab(self.cs.io)), other.to(Lab(self.cs.io)))
+            return globals()['distance_'+method](self.to(Lab(io)).colors, other.to(Lab(io)).colors)
         elif method in ['rgb']:
-            return self._diff(self.to(self.cs.nl), other.to(self.cs.nl))
+            return globals()['distance_'+method](self.to(self.cs.nl).colors, other.to(self.cs.nl).colors)
+        elif method in ['rgbl']:
+            return globals()['distance_'+method](self.to(self.cs.l).colors, other.to(self.cs.l).colors)
 
     def __getitem__(self, mask):
+        '''return masked color'''
         return Color(self.colors[mask],self.cs)
 
 
@@ -129,7 +144,8 @@ ColorChecker2005_Lab_D65_2 = np.array([[37.542, 12.018, 13.33],
         [20.475, 0.049, -0.972]])
 
 '''Macbeth ColorChecker with 2deg D50'''
-colorchecker_Macbeth_D50_2 = Color(ColorChecker2005_Lab_D50_2, Lab_D50_2)
+Macbeth_D50_2 = Color(ColorChecker2005_Lab_D50_2, Lab_D50_2)
 
 '''Macbeth ColorChecker with 2deg D65'''
-colorchecker_Macbeth_D65_2 = Color(ColorChecker2005_Lab_D65_2, Lab_D65_2)
+Macbeth_D65_2 = Color(ColorChecker2005_Lab_D65_2, Lab_D65_2)
+

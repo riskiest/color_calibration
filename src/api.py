@@ -1,65 +1,39 @@
 from .ccm import *
-def color_calibration(src,
-        dst = None, dst_colorspace = 'sRGB', 
-            dst_illuminant  = None, dst_observer = None, dst_whites = None, 
-        colorchecker = 'Macbeth_D65_2', 
-        ccm_shape = '3x3', saturated_threshold = (0.02, 0.98), colorspace = 'sRGB',
+from .color import *
+
+def color_calibration(src, dst, colorspace = sRGB,
+        ccm_shape = '3x3', 
+        distance = 'de00', 
         linear = 'gamma', gamma = 2.2, deg = 3, 
-        distance = 'de00', dist_illuminant = 'D65', dist_observer = '2',
-        weights_list = None, weights_coeff = 0, weights_color = False,
+        saturated_threshold = (0, 0.98), weights_list = None, weights_coeff = 0, 
         initial_method = 'least_square', xtol = 1e-4, ftol = 1e-4):
         
     '''
+    # ============ split line =====================
     src: 
         detected colors of ColorChecker patches;
         NOTICE: the color type is RGB not BGR, and the color values are in [0, 1];
         type: np.array(np.double)
 
-    # ============ split line =====================
-    You can set reference colors either by dst dst_colorspace dst_illuminant dst_observer
-        or by colorchecker;
-
     dst: 
         the reference colors;
-        NOTICE: the color type is some RGB color space or CIE Lab color space;
-                If the color type is RGB, the format is RGB not BGR, and the color 
-                values are in [0, 1];
-        type: np.array(np.double);
+        NOTICE: Built-in color card or custom color card are supported.
+                Built-in:
+                    Macbeth_D50_2: Macbeth ColorChecker with 2deg D50;
+                    Macbeth_D65_2: Macbeth ColorChecker with 2deg D65;
+                Custom:
+                    You should use color.Color(color_value, color_space)
+                    For the list of color spaces supported, see the notes below;
+                    If the color type is some RGB, the format is RGB not BGR, and the color 
+                    values are in [0, 1];
+        type: color.Color;
 
-    dst_colorspace: 
-        the color space of the reference colors;
-        NOTICE: it could be some RGB color space or CIE Lab color space;
+    colorspace:
+        the absolute color space that detected colors convert to;
+        NOTICE: it should be some RGB color space;
                 For the list of RGB color spaces supported, see the notes below;
-        type: str;
-    
-    dst_illuminant:
-        the illuminant of the reference color space;
-        NOTICE: the option is for CIE Lab color space;
-                if dst_colorspace is some RGB color space, the option would be ignored;
-                For the list of the illumiant supported, see the notes below;
-        type: str;
-    
-    dst_observer:
-        the observer of the reference color space;
-        NOTICE: the option is for CIE Lab color space;
-                if dst_colorspace is some RGB color space, the option would be ignored;
-                For the list of the observer supported, see the notes below;
-        type: str;
-    
-    dst_whites:
-        the indice list of gray colors of the reference colors;
-        NOTICE: If it is set to None, some linearize method would not work;
-        type: np.array(np.int);
+        type: colorspace.ColorSpace;
 
-    colorchecker:
-        the name of the ColorChecker;
-        Supported list:
-            "Macbeth": Macbeth ColorChecker with 2deg D50;
-            "Macbeth_D65_2": Macbeth ColorChecker with 2deg D65;
-        NOTICE: you can either set the reference by variables starting with dst or this;
-                The option works only if dst is set to None.
-        type: str;
-    
     # ============ split line =====================
     ccm_shape:
         the shape of color correction matrix(CCM);
@@ -67,20 +41,19 @@ def color_calibration(src,
             "3x3": 3x3 matrix;
             "4x3": 4x3 matrix;
         type: str
-    
-    saturated_threshold:
-        the threshold to determine saturation;
-        NOTICE: it is a tuple of [low, up]; 
-                The colors in the closed interval [low, up] are reserved to participate 
-                in the calculation of the loss function and initialization parameters.
-        type: tuple of [low, up];
-    
-    colorspace:
-        the absolute color space that detected colors convert to;
-        NOTICE: it could be some RGB color space;
-                For the list of RGB color spaces supported, see the notes below;
+
+    # ============ split line =====================
+    distance:
+        the type of color distance;
+        Supported list:
+            'de00': ciede2000 
+            'de94': cie94
+            'de76': cie76
+            'cmc': CMC l:c (1984)
+            'rgb': Euclidean distance of rgb color space;
+            'rgbl': Euclidean distance of rgbl color space;
         type: str;
-    
+
     # ============ split line =====================
     linear:
         the method of linearization;
@@ -111,35 +84,17 @@ def color_calibration(src,
         type: int;
 
     # ============ split line =====================
-    distance:
-        the type of color distance;
-        Supported list:
-            'de00': ciede2000 
-            'de94': cie94
-            'de76': cie76
-            'cmc': CMC l:c (1984)
-            'rgb': Euclidean distance of rgb color space;
-            'rgbl': Euclidean distance of rgbl color space;
-        type: str;
+    saturated_threshold:
+        the threshold to determine saturation;
+        NOTICE: it is a tuple of [low, up]; 
+                The colors in the closed interval [low, up] are reserved to participate 
+                in the calculation of the loss function and initialization parameters.
+        type: tuple of [low, up];
     
-    dist_illuminant:
-        the illuminant of CIE lab color space associated with distance function;
-        NOTICE: only valid when distance is set to 'de00', 'de94', 'de76' and 'cmc'; 
-                For the list of the illumiant supported, see the notes below;
-        type: str;    
-
-    dist_observer:
-        the observer of CIE lab color space associated with distance function;
-        NOTICE: only valid when distance is set to 'de00', 'de94', 'de76' and 'cmc'; 
-                For the list of the observer supported, see the notes below;
-        type: str;   
-
     # ============ split line =====================
     There are some ways to set weights:
         1. set weights_list only;
         2. set weights_coeff only;
-        3. set weights_color only;
-        4. set weights_coeff and weights_color;
     see CCM.pdf for details;
 
     weights_list:
@@ -148,12 +103,6 @@ def color_calibration(src,
     
     weights_coeff:
         the exponent number of L* component of the reference color in CIE Lab color space;
-        type: float
-    
-    weights_color:
-        if it is set to True, only non-gray color participate in the calculation 
-        of the loss function.
-        NOTICE: only valid when dst_whites is assigned.
         type: float
 
     # ============ split line =====================
@@ -171,28 +120,47 @@ def color_calibration(src,
         type: float;
     
     # ============ split line =====================
-    Supported list of illuminants:
-        'A';
-        'D50';
-        'D55';
-        'D65';
-        'D75';
-        'E';
-    
-    Supported list of observers:
-        '2';
-        '10';
-    
-    Supported list of RGB color spaces:
-        'sRGB';
-        'AdobeRGB';
-        'WideGamutRGB';
-        'ProPhotoRGB';
-        'DCI_P3_RGB';
-        'AppleRGB';
-        'REC_709_RGB';
-        'REC_2020_RGB';
-    
+    Supported Color Space:
+        Supported list of RGB color spaces:
+            sRGB;
+            AdobeRGB;
+            WideGamutRGB;
+            ProPhotoRGB;
+            DCI_P3_RGB;
+            AppleRGB;
+            REC_709_RGB;
+            REC_2020_RGB;
+
+        Supported list of linear RGB color spaces:
+            sRGBL;
+            AdobeRGBL;
+            WideGamutRGBL;
+            ProPhotoRGBL;
+            DCI_P3_RGBL;
+            AppleRGBL;
+            REC_709_RGBL;
+            REC_2020_RGBL;
+
+        Supported list of non-RGB color spaces:
+            Lab_D50_2;
+            Lab_D65_2;
+            XYZ_D50_2;
+            XYZ_D65_2;
+        
+        Supported IO (You can use Lab(io) or XYZ(io) to create color space):
+            A_2;
+            A_10;
+            D50_2;
+            D50_10;
+            D55_2;
+            D55_10;
+            D65_2;
+            D65_10;
+            D75_2;
+            D75_10;
+            E_2;
+            E_10;         
+            
     # ============ split line =====================
     Abbr.
 
@@ -207,7 +175,9 @@ def color_calibration(src,
         ccm: color correction matrix;
         cam: chromatic adaption matrix;
     '''
-    return globals()['CCM_'+ccm_shape](src, dst, dst_colorspace, dst_illuminant, dst_observer, 
-        dst_whites, colorchecker, saturated_threshold, colorspace, linear, gamma, deg, 
-        distance, dist_illuminant, dist_observer, weights_list, weights_coeff, weights_color,
+
+    return globals()['CCM_'+ccm_shape](src, dst, colorspace,
+        distance, 
+        linear, gamma, deg, 
+        saturated_threshold, weights_list, weights_coeff, 
         initial_method, xtol, ftol)

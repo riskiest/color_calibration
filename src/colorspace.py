@@ -1,58 +1,37 @@
 import numpy as np
 from skimage import color
-# from .utils import *
+import inspect
+from .io_ import *
+from .utils import *
 
-class Singleton(type):
+class SingletonArgs(type):
+    """ 
+    Singleton with arguments;
+    Only supports hashable arguments.
+    """
     _instances = {}
 
     def __call__(cls, *args, **kwargs):
-        print('args:', args)
-        print('kwargs:', kwargs)
-        if (cls, *args) not in cls._instances:
-            cls._instances[(cls, *args)] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[(cls, *args)]
+        key = (cls, frozenset(inspect.getcallargs(cls.__init__, None, *args, **kwargs).items()))
 
-class C1:
-    _instances = {}
+        if key not in cls._instances:
+            cls._instances[key] = super(SingletonArgs, cls).__call__(*args, **kwargs)
+        return cls._instances[key]
 
-    def __new__(cls, *args, **kwargs):
-        print('args1:', args)
-        print('kwargs1:', kwargs)
-        # if (cls, *args) not in cls._instances:
-        #     cls._instances[(cls, *args)] = cls( *args, **kwargs)
-        # return cls._instances[(cls, *args)]  
-
-    def __init__(self, *args, **kwargs):
-        pass  
-
-class C2(C1):
-    def __init__(self, b=True):
-        self.b = b
-
-class ColorSpace(metaclass=Singleton):
-    type = ''
+class ColorSpace(metaclass=SingletonArgs):
+    '''color space interface'''
     def __init__(self):
         self.io = None
     
     def relate(self, other):
-        return np.copy if type(self)==type(other) and self.io==other.io else None
-
-class Test(ColorSpace):
-    def __init__(self, b=True):
-        self.b = b
-
-t = Test(True)
-t = Test(b = True)
-t = Test()
-
-c = C2(True)
-c = C2(b=True)
-c = C2()
-exit()
-
+        '''
+        relate with other color space;
+        if they are the same, return copy function;
+        else return None;
+        '''
+        return (lambda x:x) if type(self)==type(other) and self.io==other.io else None
 
 class RGB_Base_(ColorSpace):
-    type = 'RGB'
     '''
     base of RGB color space;
     the argument values are from AdobeRGB;
@@ -60,7 +39,6 @@ class RGB_Base_(ColorSpace):
     Data from https://en.wikipedia.org/wiki/Adobe_RGB_color_space
     '''
     def __init__(self, linear = False):
-        # self._set_io()
         self._set_primaries()
         self._cal_M()
 
@@ -75,9 +53,9 @@ class RGB_Base_(ColorSpace):
         self.io = D65_2        
 
         # primaries
-        self.xr, self.yr = 0.6400, 0.3300	
+        self.xr, self.yr = 0.64, 0.33
         self.xg, self.yg = 0.21, 0.71
-        self.xb, self.yb = 0.1500, 0.0600
+        self.xb, self.yb = 0.15, 0.06
 
     def _set_gamma(self):
         # linearization
@@ -87,13 +65,13 @@ class RGB_Base_(ColorSpace):
         pass
 
     def operations(self):
-        # to or from XYZ
+        '''operations to or from XYZ'''
         if self.linear:
-            self.to = [self.toL, self.M]
-            self.from_ = [self.Mi, self.fromL]
+            self.to = [self.M.T]
+            self.from_ = [self.Mi.T]
         else:
-            self.to = [self.M]
-            self.from_ = [self.Mi]
+            self.to = [self.toL, self.M.T]
+            self.from_ = [self.Mi.T, self.fromL]
 
     def _cal_M(self):
         '''
@@ -110,28 +88,28 @@ class RGB_Base_(ColorSpace):
         self.Mi = np.linalg.inv(self.M)
 
     def toL(self, rgb):
+        '''rgb -> rgbl'''
         return gamma_correction(rgb, self.gamma)
     
     def fromL(self, rgbl):
+        '''rgbl -> rgb'''
         return gamma_correction(rgbl, 1/self.gamma)
 
     def relate(self, other):
         '''
-        RGB relate有3种关系：
-        1. type不同--无操作
-        1. type相同，linear相同；-- 1 copy
-        2. type相同, linear不同，self是非线性；-- 2 toL
-        3. type相同, linear不同，self是线性 -- 3 fromL
+        There are 3 kinds of relationships for RGB:
+         1. Different types;    - no operation
+         1. Same type, same linear; - copy
+         2. Same type, different linear, self is nonlinear; - 2 toL
+         3. Same type, different linear, self is linear - 3 fromL
         '''
         if type(self)!=type(other):
             return None
         if self.linear==other.linear:
-            return np.copy
+            return (lambda x:x)
         if self.linear==False:
             return self.toL
-        return self.fromL
-        # return type(self)==type(other) and self.linear==other.linear
-    
+        return self.fromL    
 
 class sRGB_Base_(RGB_Base_):
     '''
@@ -143,9 +121,9 @@ class sRGB_Base_(RGB_Base_):
         # IO
         self.io = D65_2        
         # primaries
-        self.xr, self.yr = 0.6400, 0.3300	
-        self.xg, self.yg = 0.3000, 0.6000
-        self.xb, self.yb = 0.1500, 0.0600
+        self.xr, self.yr = 0.64, 0.33	
+        self.xg, self.yg = 0.30, 0.60
+        self.xb, self.yb = 0.15, 0.06
 
     def _set_gamma(self):
         # linearization
@@ -215,6 +193,9 @@ class ProPhotoRGB_(RGB_Base_):
         self.xb, self.yb = 0.036598, 0.000105
         self.io = D50_2    
 
+    def _set_gamma(self):
+        self.gamma = 1.8
+
 class DCI_P3_RGB_(RGB_Base_):
     '''data from https://en.wikipedia.org/wiki/DCI-P3'''
 
@@ -261,6 +242,7 @@ class REC_2020_RGB_(sRGB_Base_):
         self.a, self.gamma = 0.09929682680944, 1/0.45    
 
 def bind(CS):
+    '''produce color space instance with linear and non-linear versions'''
     cs, csl = CS(), CS(True)
     cs.l = csl.l = csl
     csl.nl = cs.nl = cs
@@ -275,7 +257,7 @@ AppleRGB, AppleRGBL = bind(AppleRGB_)
 REC_709_RGB, REC_709_RGBL = bind(REC_709_RGB_)
 REC_2020_RGB, REC_2020_RGBL = bind(REC_2020_RGB_)
 
-class CAM:
+class XYZ(ColorSpace):
     '''chromatic adaption matrices'''
     CAMs = {}
 
@@ -292,43 +274,43 @@ class CAM:
         'Bradford':(Bradford, np.linalg.inv(Bradford))}
 
     @classmethod
-    def cam(cls, sio, dio, method = 'Bradford'):
+    def _cam(cls, sio, dio, method = 'Bradford'):
         '''get cam'''
+        if sio==dio:
+            return np.eye(3)
         if (sio, dio, method) in cls.CAMs:
+            return cls.CAMs[(sio, dio, method)]
+        if (dio, sio, method) in cls.CAMs:
+            cls.CAMs[(sio, dio, method)] = np.linalg.inv(cls.CAMs[(dio, sio, method)])
             return cls.CAMs[(sio, dio, method)]
         # function from http://www.brucelindbloom.com/index.html?ColorCheckerRGB.html
         XYZws = illuminants[sio]
         XYZWd = illuminants[dio]
         MA, MA_inv = cls.MAs[method]
-        M = MA_inv@np.diag((MA@XYZWd)/(MA@XYZws))
+        M = MA_inv@np.diag((MA@XYZWd)/(MA@XYZws))@MA
         cls.CAMs[(sio, dio, method)] = M
         return M
 
-cam = CAM.cam
-
-class XYZ(ColorSpace):
-    type = 'XYZ'    
     def __init__(self, io = D65_2):
         self.io = io
+        self.to = []
+        self.from_ = []
 
-    def to(self, io):
-        return [] if self.io == io else [cam(self.io, io).T]
+    def cam(self, io, method = 'Bradford'):
+        return [] if self.io == io else [self._cam(self.io, io, method).T]
         
 XYZ_D65_2 = XYZ()
 XYZ_D50_2 = XYZ(D50_2)
 
 from functools import partial
 class Lab(ColorSpace):
-    type = 'Lab'    
     def __init__(self, io = D65_2):
         self.io = io
-
-    def to(self):
-        return [partial(color.colorconv.lab2xyz, illuminant = self.io.illuminant, 
+        
+        self.to = [partial(color.colorconv.lab2xyz, illuminant = self.io.illuminant, 
             observer = self.io.observer)]
-    
-    def from_(self):
-        return [partial(color.colorconv.xyz2lab, illuminant = self.io.illuminant, 
+        
+        self.from_ = [partial(color.colorconv.xyz2lab, illuminant = self.io.illuminant, 
             observer = self.io.observer)]
 
 # from copy import copy
