@@ -9,6 +9,7 @@ def gamma_correction(rgb, gamma):
     gamma correction; 
     see ColorSpace.pdf for details;
     '''
+    
     arr = rgb.copy()
     mask = rgb>=0
     arr[mask] = np.power(arr[mask], gamma)
