@@ -2,6 +2,7 @@
 #include <functional>
 #include <vector>
 #include "opencv2\core\core.hpp"
+#include "utils.h"
 
 namespace cv {
 namespace ccm {
@@ -34,7 +35,7 @@ public:
 	};
 };
 
-Operation identity_op({ [](Mat x) {return x; } });
+Operation identity_op( [](Mat x) {return x; } );
 
 class Operations {
 public:

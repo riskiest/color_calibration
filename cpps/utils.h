@@ -2,6 +2,8 @@
 #include <functional>
 #include <vector>
 #include "opencv2\core\core.hpp"
+#include <string>
+#include <iostream>
 
 namespace cv {
 namespace ccm {
@@ -32,10 +34,10 @@ Mat _channelwise(Mat src, F&& lambda) {
 
 template<typename F>
 Mat _distancewise(Mat src, Mat ref, F&& lambda) {
-    Mat dst = Mat(src.size(), src.depth());
+    Mat dst = Mat(src.size(), CV_64FC1);
     MatIterator_<Vec3d> it_src = src.begin<Vec3d>(), end_src = src.end<Vec3d>(), 
                 it_ref= ref.begin<Vec3d>(), end_ref=ref.end<Vec3d>();
-    MatIterator_<double> it_dst = dst.begin<Vec3d>(), end_dst= dst.end<Vec3d>();
+    MatIterator_<double> it_dst = dst.begin<double>(), end_dst= dst.end<double>();
     for (; it_src!=end_src; ++it_src,++it_ref,++it_dst) {
         *it_dst = lambda(*it_src, *it_ref);
     }
@@ -52,10 +54,20 @@ Mat gamma_correction(Mat src, double gamma) {
 }
 
 Mat mask_copyto(Mat src, Mat mask) {
-    Mat src_(countNonZero(mask), 1, src.type());
-    int countone = 0;
+    Mat dst(countNonZero(mask), 1, src.type());
+    auto it_src = src.begin<Vec3d>(), end_src = src.end<Vec3d>();
+    auto it_mask = mask.begin<int>(), end_mask = mask.end<int>();
+    auto it_dst = dst.begin<Vec3d>(), end_dst = dst.end<Vec3d>();
+    for (; it_src != end_src; ++it_src, ++it_mask) {
+        if (*it_mask) {
+            (*++it_dst) = (*it_src);
+        }
+    }
+    return dst;
 
-    for (int i = 0; i < mask.rows; i++) {
+    //int countone = 0;
+
+   /* for (int i = 0; i < mask.rows; i++) {
         if (mask.at<double>(i, 0)) {
             for (int c = 0; c < src.channels(); c++) {
                 src_.at<Vec3d>(countone, 0)[c] = src.at<Vec3d>(i, 0)[c];
@@ -63,7 +75,7 @@ Mat mask_copyto(Mat src, Mat mask) {
             countone++;
         };
     }
-    return src_;
+    return src_;*/
 }
 
 Mat multiple(Mat xyz, Mat ccm) {
@@ -79,23 +91,24 @@ Mat multiple(Mat xyz, Mat ccm) {
 //    //res = res.reshape(3, xyz.rows);
 //    return res;
 //}
-
+void print(Mat m, std::string s) {
+    std::cout << s << m << std::endl;
+    std::cout << s << m.size() << std::endl;
+}
 
 Mat saturate(Mat src, double low, double up) {
-    Mat src_saturation(src.size(), CV_64FC1);
-    for (int i = 0; i < src.rows; ++i) {
-        for (int j = 0; j < src.cols; ++j) {
-            double saturation_ij = 1;
-            for (int m = 0; m < 3; m++) {
-                if (not((src.at<Vec3d>(i, j)[m] < up) && (src.at<Vec3d>(i, j)[m] > low))) {
-                    saturation_ij = 0;
-                    break;
-                }
+    Mat dst = Mat::ones(src.size(), CV_8UC1);
+    MatIterator_<Vec3d> it_src = src.begin<Vec3d>(), end_src = src.end<Vec3d>();
+    MatIterator_<double> it_dst = dst.begin<double>(), end_dst = dst.end<double>();
+    for (; it_src != end_src; ++it_src, ++it_dst) {
+        for (int i = 0; i < 3; ++i) {
+            if ((*it_src)[i] > up || (*it_src)[i] < low) {
+                *it_dst = 0.;
+                break;
             }
-            src_saturation.at<double>(i, j) = saturation_ij;
         }
     }
-    return src_saturation;
+    return dst;
 }
 
 Mat M_gray = (Mat_<double>(3, 1) << 0.2126, 0.7152, 0.0722);

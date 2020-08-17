@@ -14,16 +14,21 @@ public:
 	std::string illuminant;
 	std::string observer;
 	IO() {};
-	IO(std::string illuminant, std::string observer) :illuminant(illuminant), observer(observer) {};
+	IO(std::string illuminant, std::string observer) :illuminant(illuminant), observer(observer) { out(); };
 	bool operator<(const IO& other)const { 
 		return (illuminant < other.illuminant || ((illuminant == other.illuminant) && (observer < other.observer))); 
 	}
 	bool operator==(IO& other) const{
 		return illuminant == other.illuminant && observer == other.observer;
 	};
+	bool out() {
+		std::string s = "_";
+		std::cout << illuminant + s + observer << std::endl;
+		return true;
+	}
 };
 
-static IO A_2("A", "2"), A_10("A", "10"),
+static const IO A_2("A", "2"), A_10("A", "10"),
 	D50_2("D50", "2"), D50_10("D50", "10"),
 	D55_2("D55", "2"), D55_10("D55", "10"),
 	D65_2("D65", "2"), D65_10("D65", "10"),
@@ -51,6 +56,9 @@ std::map <IO, std::vector<double>> get_illuminant() {
 
         illuminants[it->first] = xyY2XYZ(it->second);
     }
+	illuminants[D65_2] = { 0.95047, 1., 1.08883 };
+	illuminants[D65_10] = { 0.94811, 1., 1.07304 };
+
     return illuminants;
 }
 

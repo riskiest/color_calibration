@@ -44,15 +44,17 @@ double delta_cie94(Vec3d lab1, Vec3d lab2, double kH = 1.0, double kC = 1.0, dou
 	return res > 0 ? sqrt(res) : 0;
 }
 
-//double delta_cie94_graphic_arts(Vec3d lab1, Vec3d lab2) {
-//	return delta_cie94(lab1, lab2);
-//}
+double delta_cie94_graphic_arts(Vec3d lab1, Vec3d lab2) {
+	return delta_cie94(lab1, lab2);
+}
+
+double to_rad(double degree) { return degree / 180 * CV_PI; };
 
 double delta_cie94_textiles(Vec3d lab1, Vec3d lab2) {
 	return delta_cie94(lab1, lab2, 1.0, 1.0, 2.0, 0.048, 0.014);
 }
 
-double delta_ciede2000(Vec3d lab1, Vec3d lab2, double kL = 1.0, double kC = 1.0, double kH = 1.0) {
+double delta_ciede2000_(Vec3d lab1, Vec3d lab2, double kL = 1.0, double kC = 1.0, double kH = 1.0) {
 	double delta_L_apo = lab2[0] - lab1[0];
 	double l_bar_apo = (lab1[0] + lab2[0]) / 2.0;
 	double C1 = sqrt(pow(lab1[1], 2) + pow(lab1[2], 2));
@@ -128,7 +130,10 @@ double delta_ciede2000(Vec3d lab1, Vec3d lab2, double kL = 1.0, double kC = 1.0,
 }
 
 
-double to_rad(double degree) { return degree / 180 * CV_PI; };
+double delta_ciede2000(Vec3d lab1, Vec3d lab2) {
+	return delta_ciede2000_(lab1, lab2);
+}
+
 
 double delta_cmc(Vec3d lab1, Vec3d lab2, double kL=1, double kC=1) {
 	double dL = lab2[0] - lab1[0];
@@ -161,9 +166,19 @@ double delta_cmc(Vec3d lab1, Vec3d lab2, double kL=1, double kC=1) {
 	return sqrt(pow(dL / (kL * sL), 2.0) + pow(dC / (kC * sC), 2.0) + pow(dH / sH, 2.0));
 }
 
+
+double delta_cmc_1to1(Vec3d lab1, Vec3d lab2) {
+	return delta_cmc(lab1, lab2);
+}
+
 double delta_cmc_2to1(Vec3d lab1, Vec3d lab2) {
 	return delta_cmc(lab1, lab2, 2, 1);
 }
+
+
+//double delta_cmc_2to1(Vec3d lab1, Vec3d lab2) {
+//	return delta_cmc(lab1, lab2, 2, 1);
+//}
 
 Mat distance(Mat src, Mat ref, DISTANCE_TYPE distance_type) {
 	switch (distance_type)
@@ -172,7 +187,7 @@ Mat distance(Mat src, Mat ref, DISTANCE_TYPE distance_type) {
 		return _distancewise(src, ref, delta_cie76);
 		break;
 	case cv::ccm::CIE94_GRAPHIC_ARTS:
-		return _distancewise(src, ref, delta_cie94);
+		return _distancewise(src, ref, delta_cie94_graphic_arts);
 		break;
 	case cv::ccm::CIE94_TEXTILES:
 		return _distancewise(src, ref, delta_cie94_textiles);
@@ -181,7 +196,7 @@ Mat distance(Mat src, Mat ref, DISTANCE_TYPE distance_type) {
 		return _distancewise(src, ref, delta_ciede2000);
 		break;
 	case cv::ccm::CMC_1TO1:
-		return _distancewise(src, ref, delta_cmc);
+		return _distancewise(src, ref, delta_cmc_1to1);
 		break;
 	case cv::ccm::CMC_2TO1:
 		return _distancewise(src, ref, delta_cmc_2to1);
@@ -193,6 +208,7 @@ Mat distance(Mat src, Mat ref, DISTANCE_TYPE distance_type) {
 		return _distancewise(src, ref, delta_cie76);
 		break;
 	default:
+		throw;
 		break;
 	}	
 };
