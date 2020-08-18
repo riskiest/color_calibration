@@ -30,7 +30,7 @@ public:
 			M = M * other.M;
 		}
 	};
-	bool clear() {
+	void clear() {
 		M = Mat();
 	};
 };

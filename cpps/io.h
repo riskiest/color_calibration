@@ -18,7 +18,7 @@ public:
 	bool operator<(const IO& other)const { 
 		return (illuminant < other.illuminant || ((illuminant == other.illuminant) && (observer < other.observer))); 
 	}
-	bool operator==(IO& other) const{
+	bool operator==(const IO& other) const{
 		return illuminant == other.illuminant && observer == other.observer;
 	};
 	bool out() {

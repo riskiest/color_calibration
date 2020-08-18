@@ -15,7 +15,7 @@ Mat _elementwise(Mat src, F&& lambda) {
     Mat dst = src.clone();
     MatIterator_<Vec3d> it, end;
     for (it = dst.begin<Vec3d>(), end = dst.end<Vec3d>(); it != end; ++it) {
-        for (int j = 1; j < 3; j++) {
+        for (int j = 0; j < 3; j++) {
             (*it)[j] = lambda((*it)[j]);
         }
     }

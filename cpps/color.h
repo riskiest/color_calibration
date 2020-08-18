@@ -19,22 +19,25 @@ public:
 	Color(Mat colors, ColorSpace cs) :colors(colors), cs(cs) {};
 
 	Color to(const ColorSpace& other, CAM method = BRADFORD, bool save = true) {
-		if (_history.count(cs) == 1) {
-			return *_history[cs];
+	/*	if (_history.count(other) == 1) {
+			return *_history[other];
+		}*/
+		if (cs.relate(other)) {
+			return Color(cs.relation(other).run(colors), other);
 		}
 		Operations ops;
 		ops.add(cs.to).add(XYZ(cs.io).cam(other.io, method)).add(other.from);
 		Color color(ops.run(colors), other);
-		if (save) {
-			_history[cs] = &color;
-		}
+		//if (save) {
+		//	_history[other] = &color;
+		//}
 		return color;
 	}
 
 	Mat channel(Mat M, int i) {
 		Mat dChannels[3];
 		split(M, dChannels);
-		return dChannels[0];
+		return dChannels[i];
 	}
 
 	Mat toGray(IO io, CAM method = BRADFORD, bool save = true) {

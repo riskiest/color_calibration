@@ -25,7 +25,7 @@ On the chromaticity diagram, the triangle formed by the three primary colors cov
 
 sRGB is the most common color space for computer displays, but the gamut is limited. The gamut of the color space such as Adobe RGB and Wide Gamut RGB is much larger. 
 
-![File:CIE1931xy gamut comparison.svg](../Chinese/%E7%AE%97%E6%B3%95%E4%BB%8B%E7%BB%8D/%E8%89%B2%E5%BD%A9%E7%A9%BA%E9%97%B4.assets/512px-CIE1931xy_gamut_comparison.svg.png)
+![File:CIE1931xy gamut comparison.svg](https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/CIE1931xy_gamut_comparison.svg/512px-CIE1931xy_gamut_comparison.svg.png)
 
 ### Linearization and Delinearization
 

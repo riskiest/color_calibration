@@ -38,15 +38,16 @@ public:
 	};
 
 	bool operator<(const ColorSpace& other)const {
-		if (io < other.io) {
-			return true;
-		}
-		if (type < other.type) {
-			return true;
-		}
-		if (linear < other.linear) {
-			return true;
-		}
+		return (io < other.io) || ((io == other.io) && (type<other.type)) || ((io==other.io)&&(type==other.type)&&(linear==other.linear));
+		//if (io < other.io) {
+		//	return true;
+		//}
+		//if (type < other.type) {
+		//	return true;
+		//}
+		//if (linear < other.linear) {
+		//	return true;
+		//}
 	}
 };
 
@@ -72,7 +73,7 @@ public:
 
 	using ColorSpace::ColorSpace;
 
-	virtual Operations relation(RGB_Base_ other) {
+	virtual Operations relation(ColorSpace other) {
 		if (linear == other.linear) { return identity; }
 		if (linear) { return Operations({ Operation(fromL) }); }
 		return Operations({ Operation(toL) });
@@ -127,6 +128,19 @@ public:
 
 	virtual Mat _toL(Mat rgb) { return Mat(); };
 	virtual Mat _fromL(Mat rgbl) { return Mat(); };
+
+	//virtual bool relate(ColorSpace other) {
+	//	return (type == other.type) && (io == other.io);
+	//};
+	//virtual Operations relation(ColorSpace other) {
+	//	if (linear == other.linear) {
+	//		return identity;
+	//	}
+	//	if (linear) {
+	//		return Operations({ fromL });
+	//	}
+	//	return Operations({ toL });
+	//};
 
 	void bind(RGB_Base_& rgbl) {
 		init();
