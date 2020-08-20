@@ -56,8 +56,8 @@ public:
 	//IO io;
 	//std::string type = "RGB";
 	//bool linear;
-	RGB_Base_* l = 0;
-	RGB_Base_* nl = 0;
+	//RGB_Base_* l = 0;
+	//RGB_Base_* nl = 0;
 	double xr;
 	double yr;
 	double xg;
@@ -73,7 +73,7 @@ public:
 
 	using ColorSpace::ColorSpace;
 
-	virtual Operations relation(ColorSpace other) {
+	virtual Operations relation(ColorSpace other) override {
 		if (linear == other.linear) { return identity; }
 		if (linear) { return Operations({ Operation(fromL) }); }
 		return Operations({ Operation(toL) });
@@ -481,7 +481,7 @@ public:
 		if (sio == dio) {
 			return Mat::eye(cv::Size(3, 3), CV_64FC1);
 		}
-		if (CAMs.count(std::make_tuple(dio, sio, method)) == 1) {
+		if (CAMs.count(std::make_tuple(sio, dio, method)) == 1) {
 			return CAMs[std::make_tuple(dio, sio, method)];
 		}
 
@@ -507,8 +507,12 @@ public:
 
 		Mat M = MA_inv * Mat::diag((MA * XYZws) / (MA * XYZWd)) * MA;
 
-		CAMs[std::make_tuple(dio, sio, method)] = M;
-		CAMs[std::make_tuple(sio, dio, method)] = M.inv();
+		CAMs[std::make_tuple(sio, dio, method)] = M;
+		CAMs[std::make_tuple(dio, sio, method)] = M.inv();
+		std::cout << "CAM" << std::endl;
+		sio.out();
+		dio.out();
+		std::cout << M << std::endl;
 		return M;
 	}
 

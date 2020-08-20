@@ -11,14 +11,14 @@ namespace ccm {
 class Color {
 public:
 	Mat colors;
-	ColorSpace cs;
+	ColorSpace& cs;
 	Mat grays;
 	Mat colored;
 	std::map<ColorSpace, Color*> _history;
 
-	Color(Mat colors, ColorSpace cs) :colors(colors), cs(cs) {};
+	Color(Mat colors, ColorSpace& cs) :colors(colors), cs(cs) {};
 
-	Color to(const ColorSpace& other, CAM method = BRADFORD, bool save = true) {
+	Color to(ColorSpace& other, CAM method = BRADFORD, bool save = true) {
 	/*	if (_history.count(other) == 1) {
 			return *_history[other];
 		}*/
@@ -27,6 +27,7 @@ public:
 		}
 		Operations ops;
 		ops.add(cs.to).add(XYZ(cs.io).cam(other.io, method)).add(other.from);
+		std::cout << ops.ops.size() << std::endl;
 		Color color(ops.run(colors), other);
 		//if (save) {
 		//	_history[other] = &color;
@@ -41,11 +42,13 @@ public:
 	}
 
 	Mat toGray(IO io, CAM method = BRADFORD, bool save = true) {
-		return channel(this->to(XYZ(io), method, save).colors, 1);
+		XYZ xyz(io);
+		return channel(this->to(xyz, method, save).colors, 1);
 	}
 
 	Mat toLuminant(IO io, CAM method = BRADFORD, bool save = true) {
-		return channel(this->to(Lab(io), method, save).colors, 0);
+		Lab lab(io);
+		return channel(this->to(lab, method, save).colors, 0);
 	}
 
 	Mat diff(Color& other, DISTANCE_TYPE method = CIE2000) {
@@ -53,6 +56,7 @@ public:
 	}
 
 	Mat diff(Color& other, IO io, DISTANCE_TYPE method = CIE2000) {
+		Lab lab(io);
 		switch (method)
 		{
 		case cv::ccm::CIE76:
@@ -60,8 +64,8 @@ public:
 		case cv::ccm::CIE94_TEXTILES:
 		case cv::ccm::CIE2000:
 		case cv::ccm::CMC_1TO1:
-		case cv::ccm::CMC_2TO1:
-			return distance(to(Lab(io)).colors, other.to(Lab(io)).colors, method);
+		case cv::ccm::CMC_2TO1:			
+			return distance(to(lab).colors, other.to(lab).colors, method);
 			break;
 		case cv::ccm::RGB:
 			return distance(to(*cs.nl).colors, other.to(*cs.nl).colors, method);

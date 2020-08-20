@@ -3,6 +3,7 @@
 #include <vector>
 #include "opencv2\core\core.hpp"
 #include "utils.h"
+#include <iostream>
 
 namespace cv {
 namespace ccm {
@@ -24,7 +25,7 @@ public:
 	};
 	void add(Operation& other) {
 		if (M.empty()) {
-			M = other.M;
+			M = other.M.clone();
 		}
 		else {
 			M = M * other.M;
@@ -33,6 +34,14 @@ public:
 	void clear() {
 		M = Mat();
 	};
+	void out() const {
+		if (linear) {
+			std::cout << "operation_M:" << M << std::endl;
+		}
+		else {
+			std::cout << "operation_f:" << std::endl;
+		}
+	}
 };
 
 Operation identity_op( [](Mat x) {return x; } );
@@ -49,6 +58,7 @@ public:
 	Mat run(Mat abc) {
 		Operation hd;
 		for (auto& op : ops) {
+			op.out();
 			if (op.linear) {
 				hd.add(op);
 			}
@@ -59,6 +69,7 @@ public:
 			}
 		}
 		abc = hd(abc);
+		hd.clear();
 		return abc;
 	};
 };
