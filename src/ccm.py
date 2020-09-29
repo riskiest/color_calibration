@@ -187,8 +187,8 @@ class CCM_4x3(CCM_3x3):
         '''
         # print('src_rgbl', self.src_rgbl)
         # print('dst_rgbl', self.src_rgbl)
-        rs, gs, bs, _ = np.sum(self.src_rgbl, axis = 0)
-        rd, gd, bd, _ = np.sum(self.dst_rgbl, axis = 0)
+        rs, gs, bs, *_ = np.sum(self.src_rgbl, axis = 0)
+        rd, gd, bd, *_ = np.sum(self.dst_rgbl, axis = 0)
         return np.array([[rd/rs, 0, 0], [0, gd/gs, 0], [0, 0, bd/bs], [0, 0, 0]]) 
 
     def infer(self, img, L=False):
