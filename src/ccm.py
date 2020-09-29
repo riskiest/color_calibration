@@ -109,14 +109,24 @@ class CCM_3x3:
             return ccm
         self.ccm = ccm
         self.error = np.sum(r) 
+        print('ccm:', self.ccm)
+        print('error:', self.error)           
 
-    def loss(self, ccm):
+    def loss(self, ccm, DEBUG = False):
         '''
         loss function;
         it is square-sum of color difference between src_rgbl@ccm and dst
         '''
         ccm = ccm.reshape((-1, 3))
-        dist = Color(self.src_rgbl@ccm, self.cs).diff(self.dst, self.distance)
+        if DEBUG:
+            print('src_rgbl: ', self.src_rgbl)
+            print('ccm: ', ccm)
+            print('converted: ', self.src_rgbl@ccm)
+        dist = Color(self.src_rgbl@ccm, self.cs.l).diff(self.dst, self.distance, None, DEBUG)
+        if DEBUG:
+            print('dist: ', dist)
+            print('dist.colors: ', Color(self.src_rgbl@ccm, self.cs.l).colors)
+            print('lab', Color(self.src_rgbl@ccm, self.cs.l).to(Lab_D50_2).colors)
         dist = np.power(dist, 2)
         if self.weights is not None:
             dist = self.weights*dist
@@ -125,13 +135,18 @@ class CCM_3x3:
     def fitting(self):
         '''fitting ccm if distance function is associated with CIE Lab color space'''
         ccm0 = self.inital_func()
+        #loss0 = self.loss(ccm0)
+        self.ccm0 = ccm0
         ccm0 = ccm0.reshape((-1))
+        error0 = (self.loss(ccm0)/self.masked_len)**0.5
+        print('error0:', error0)
         res = fmin(self.loss, ccm0, xtol = self.xtol, ftol = self.ftol)
         if res is not None:
             self.ccm = res.reshape((-1,3))
             self.error = (self.loss(res)/self.masked_len)**0.5
             print('ccm:', self.ccm)
-            print('error:', self.error)         
+            print('error:', self.error) 
+            print('ccm0:', ccm0)        
 
     def infer(self, img, L=False):
         '''infer using fittingd ccm'''
@@ -165,13 +180,15 @@ class CCM_4x3(CCM_3x3):
         '''convert matrix A to [A, 1]'''
         return np.c_[arr, np.ones((*arr.shape[:-1], 1))]
 
-    def initial_white_balance(self, src_rgbl, dst_rgbl):
+    def initial_white_balance(self):
         '''
         fitting nonlinear-optimization initial value by white balance:
         see CCM.pdf for details;
         '''
-        rs, gs, bs = np.sum(src_rgbl, axis = 0)
-        rd, gd, bd = np.sum(dst_rgbl, axis = 0)
+        # print('src_rgbl', self.src_rgbl)
+        # print('dst_rgbl', self.src_rgbl)
+        rs, gs, bs, _ = np.sum(self.src_rgbl, axis = 0)
+        rd, gd, bd, _ = np.sum(self.dst_rgbl, axis = 0)
         return np.array([[rd/rs, 0, 0], [0, gd/gs, 0], [0, 0, bd/bs], [0, 0, 0]]) 
 
     def infer(self, img, L=False):

@@ -90,6 +90,7 @@ def test(filename, savetag, series_tag, L=False, **kwargs):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)/255.
     src = fileDict[filename]
     ccm = color_calibration(src/255, Macbeth_D65_2, **kwargs)
+    #print(ccm.ccm0)
     # ccm.value(100000)
     img = ccm.infer_image(filename, L)
     head, end = os.path.splitext(filename)
@@ -97,7 +98,7 @@ def test(filename, savetag, series_tag, L=False, **kwargs):
 
 def test_1(series_tag='A'):
     test('imgs/input1.png', 1, series_tag, colorspace = sRGB)
-    test('imgs/input1.png', 2, series_tag, colorspace = AdobeRGB, ccm_shape = '4x3')
+    test('imgs/input1.png', 2, series_tag, colorspace = AdobeRGB, ccm_shape = '4x3',initial_method="white_balance")
     test('imgs/input1.png', 3, series_tag, colorspace = WideGamutRGB, linear='gray_polyfit', ccm_shape = '4x3')
     test('imgs/input1.png', 4, series_tag, colorspace = ProPhotoRGB, distance = 'rgbl', linear='gray_logpolyfit', deg = 3)
     test('imgs/input1.png', 5, series_tag, colorspace = DCI_P3_RGB, L=True, linear='identity', distance = 'rgb')

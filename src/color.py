@@ -63,6 +63,8 @@ class Color:
 
     def get_gray(self, JDN=2):
         '''calculate gray mask'''
+        if self.grays is not None:
+            return
         color = self.to(Lab_D65_2).colors
         L = color[..., 0]
         a, b = np.zeros(L.shape), np.zeros(L.shape)
@@ -72,11 +74,14 @@ class Color:
         self.grays = (dis<JDN)
         self.colored = ~self.grays
     
-    def diff(self, other, method='de00', io = None):
+    def diff(self, other, method='de00', io = None, DEBUG = False):
         '''return distance between self and other'''
         if not io: 
             io=self.cs.io
         if method in ['de00', 'de94', 'de76', 'cmc']:
+            if DEBUG:
+                print('to_lab: ', self.to(Lab(io)).colors)
+                print('other_lab: ',other.to(Lab(io)).colors)
             return globals()['distance_'+method](self.to(Lab(io)).colors, other.to(Lab(io)).colors)
         elif method in ['rgb']:
             return globals()['distance_'+method](self.to(self.cs.nl).colors, other.to(self.cs.nl).colors)
