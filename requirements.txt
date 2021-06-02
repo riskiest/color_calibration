@@ -41,6 +41,6 @@ scipy==1.4.1
 six==1.13.0
 sshtunnel==0.1.5
 tifffile==2020.5.11
-urllib3==1.25.7
+urllib3==1.26.5
 Werkzeug==0.16.0
 wrapt==1.11.2
