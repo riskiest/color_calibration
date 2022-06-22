@@ -23,7 +23,7 @@ MarkupSafe==1.1.1
 matplotlib==3.1.2
 mccabe==0.6.1
 networkx==2.4
-numpy==1.18.1
+numpy==1.22.0
 opencv-python==4.1.2.30
 paramiko==2.7.1
 Pillow==7.1.0
