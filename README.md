@@ -17,7 +17,7 @@ There will be more functions in branch v2.
 - [x] weights
 - [x] color space
 - [x] new linearize class
-- [x] accept customerized colorchecker
+- [x] accept customized colorchecker
 - [x] new ccm matrix
 - [x] new distance function
 - [x] rgb or bgr (determined: only rgb)
